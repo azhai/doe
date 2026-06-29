@@ -1,0 +1,481 @@
+name: Latest Build
+
+on: 
+  workflow_dispatch:
+    inputs:
+      deps_rev_override:
+        description: 'Deps Revision Override'
+        type: string
+        default: ''
+        required: false
+  push:
+    branches:
+      - master
+    paths:
+      - '**'
+      - '!.github/**'
+      - '!**.md'
+      - '!.gitattributes'
+      - '!examples/**.cy'
+      - '!examples/**/*.cy'
+# Cancel previous job if it's running.
+concurrency:
+  group: latest
+  cancel-in-progress: true
+jobs:  
+  build:
+    name: host=${{ matrix.config.host }} cmd=${{ matrix.config.cmd }} target=${{ matrix.config.target }} mode=${{ matrix.config.mode }}
+    runs-on: ${{ matrix.config.host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - host: ubuntu-22.04
+            target: x86_64-linux-gnu
+            mode: release
+            cmd: cli
+          - host: ubuntu-22.04
+            target: x86_64-selinux-gnu
+            mode: release
+            cmd: cli
+          - host: macos-12
+            target: x86_64-macos-none
+            mode: release
+            cmd: cli
+          - host: macos-14
+            target: aarch64-macos-none
+            mode: release
+            cmd: cli
+          - host: windows-2022
+            target: x86_64-windows-gnu
+            mode: release
+            cmd: cli
+          - host: windows-2022
+            target: x86_64-windows-gnu
+            mode: release
+            cmd: lib
+          - host: windows-2022
+            target: x86_64-windows-msvc
+            mode: release
+            cmd: lib
+          - host: ubuntu-22.04
+            target: wasm32-freestanding
+            mode: release
+            cmd: web-lib
+          - host: ubuntu-22.04
+            target: wasm32-wasi
+            mode: release
+            cmd: cli
+          - host: ubuntu-22.04
+            target: x86_64-linux-gnu
+            mode: release
+            cmd: lib
+          - host: macos-12
+            target: x86_64-macos-none
+            mode: release
+            cmd: lib
+          - host: macos-14
+            target: aarch64-macos-none
+            mode: release
+            cmd: lib
+    env:
+      BIN_ZIP: >-
+        ${{ fromJson('{
+          "x86_64-windows-gnu": "doe-windows-x64.zip",
+          "x86_64-linux-gnu": "doe-linux-x64.tar.gz",
+          "x86_64-selinux-gnu": "doe-selinux-x64.tar.gz",
+          "x86_64-macos-none": "doe-macos-x64.tar.gz",
+          "aarch64-macos-none": "doe-macos-arm64.tar.gz",
+          "wasm32-freestanding": "doe-web.wasm",
+          "wasm32-wasi": "doe-wasi.wasm",
+        }')[matrix.config.target] }}
+      ZIG_TARGET_FLAG: >-
+        ${{ fromJson('{
+          "x86_64-windows-gnu": "-Dtarget=x86_64-windows-gnu -Dcpu=baseline",
+          "x86_64-windows-msvc": "-Dtarget=x86_64-windows-msvc -Dcpu=baseline",
+          "x86_64-linux-gnu": "-Dtarget=x86_64-linux-gnu -Dcpu=baseline",
+          "x86_64-selinux-gnu": "-Dtarget=x86_64-linux-gnu -Dcpu=baseline -Dselinux",
+          "x86_64-macos-none": "-Dtarget=x86_64-macos-none -Dcpu=baseline",
+          "aarch64-macos-none": "-Dtarget=aarch64-macos-none -Dcpu=baseline",
+          "wasm32-freestanding": "-Dtarget=wasm32-freestanding",
+          "wasm32-wasi": "-Dtarget=wasm32-wasi",
+        }')[matrix.config.target] }}
+      BUILD_HOST: ${{ matrix.config.host }}
+      BUILD_TARGET: ${{ matrix.config.target }}
+      BUILD_MODE: ${{ matrix.config.mode }}
+      BUILD_CMD: ${{ matrix.config.cmd }}
+      BIN_NAME: doe
+      BIN_EXT: ${{ contains(matrix.config.target, 'windows') && '.exe' || '' }}
+      ZIG_MODE_FLAG: ${{ (matrix.config.mode == 'release' && '-Doptimize=ReleaseSafe') || '' }}
+      DEV_FLAG: ${{ startsWith(github.ref, 'refs/tags/') && '-Ddev=false' || '' }}
+      ZIG_VERSION: 0.15.2
+    steps:
+      - name: Install Linux deps.
+        if: env.BUILD_HOST == 'ubuntu-22.04' && env.BUILD_TARGET == 'x86_64-linux-gnu'
+        run: |
+          sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu `lsb_release -sc` main universe restricted multiverse"
+          sudo apt-get update -y -qq
+          sudo apt-get install xz-utils
+
+      - name: Clone repo.
+        uses: actions/checkout@v2
+        with:
+          # Fetch all so commit count can be computed from tag.
+          fetch-depth: 0
+          #submodules: recursive
+
+      - name: Install zig.
+        if: env.BUILD_HOST == 'ubuntu-22.04'
+        run: |
+          wget -c https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-x86_64-linux-${{ env.ZIG_VERSION }}.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin
+
+      - name: Install wasm3.
+        if: env.BUILD_HOST == 'ubuntu-22.04' && (env.BUILD_TARGET == 'wasm32-freestanding' || env.BUILD_TARGET == 'wasm32-wasi')
+        run: |
+          git clone --depth=1 https://github.com/wasm3/wasm3.git
+          cd wasm3
+          mkdir build
+          cd build
+          cmake ..
+          make
+
+      - name: Install zig.
+        if: env.BUILD_HOST == 'macos-12'
+        run: |
+          wget -c https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-x86_64-macos-${{ env.ZIG_VERSION }}.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin
+          xcode-select --print-path
+
+      - name: Install zig.
+        if: env.BUILD_HOST == 'macos-14'
+        run: |
+          wget -c https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-aarch64-macos-${{ env.ZIG_VERSION }}.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin
+          xcode-select --print-path
+
+      - name: Install zig.
+        if: env.BUILD_HOST == 'windows-2022'
+        run: |
+          Invoke-WebRequest -Uri 'https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-x86_64-windows-${{ env.ZIG_VERSION }}.zip' -OutFile 'C:\zig.zip'
+          cd C:\
+          7z x zig.zip
+          Add-Content $env:GITHUB_PATH 'C:\zig-x86_64-windows-${{ env.ZIG_VERSION }}\'
+
+      - name: Setup script.
+        uses: actions/github-script@v5
+        with:
+          script: |
+            async function execCmd(name, args) {
+              const opts = {};
+              let out = '';
+              let err = '';
+              opts.listeners = {
+                stdout: (data) => {
+                  out += data.toString();
+                },
+                stderr: (data) => {
+                  process.stderr.write(data.toString());
+                }
+              };
+              // opt.cwd = './lib';
+              await exec.exec(name, args, opts);
+              return out;
+            }
+            const version = await execCmd('zig', ['build', 'version']);
+            const parts = version.split('.')
+            const last_version = parts[0] + '.' + (parseInt(parts[1])-1)
+            core.exportVariable('SHORT_VERSION', version);
+            await execCmd('git', ['fetch', '--all', '--tags']);
+            const build = await execCmd('git', ['rev-list', '--count', `${last_version}..${context.sha}`])
+            core.exportVariable('BUILD', build.trim());
+            core.exportVariable('COMMIT', context.sha.substring(0, 7));
+
+      - name: Cache.
+        #if: env.BUILD_TARGET != 'x86_64-windows-gnu'
+        uses: actions/cache@v4
+        with:
+          path: |-
+            ~/.cache/zig
+            zig-cache
+            ~/AppData/Local/zig
+          key:
+            build-${{ env.BUILD_TARGET }}-${{ env.BUILD_MODE }}-1
+          restore-keys:
+            build-${{ env.BUILD_TARGET }}-${{ env.BUILD_MODE }}-1
+
+      - name: Run tests. (debug)
+        if: env.BUILD_TARGET != 'wasm32-wasi' && (env.BUILD_CMD == 'cli' || (env.BUILD_CMD == 'lib' && env.BUILD_TARGET != 'x86_64-windows-msvc'))
+        run: |
+          zig build test ${{ env.ZIG_TARGET_FLAG }} ${{ env.DEV_FLAG }}
+
+      - name: Run tests. (debug, msvc)
+        if: env.BUILD_CMD == 'lib' && env.BUILD_TARGET == 'x86_64-windows-msvc'
+        run: |
+          zig build test ${{ env.ZIG_TARGET_FLAG }} ${{ env.DEV_FLAG }} -Dffi=false
+
+      - name: Run tests. (release)
+        if: env.BUILD_TARGET != 'wasm32-wasi' && (env.BUILD_CMD == 'cli' || (env.BUILD_CMD == 'lib' && env.BUILD_TARGET != 'x86_64-windows-msvc'))
+        run: |
+          zig build test ${{ env.ZIG_TARGET_FLAG }} ${{ env.DEV_FLAG}} -Doptimize=ReleaseSafe
+
+      - name: Run tests. (release, msvc)
+        if: env.BUILD_CMD == 'lib' && env.BUILD_TARGET == 'x86_64-windows-msvc'
+        run: |
+          zig build test ${{ env.ZIG_TARGET_FLAG }} ${{ env.DEV_FLAG}} -Doptimize=ReleaseSafe -Dffi=false
+
+      - name: Run tests.
+        if: env.BUILD_TARGET == 'wasm32-freestanding' || env.BUILD_TARGET == 'wasm32-wasi'
+        run: |
+          zig build build-test -Dtarget=wasm32-wasi -Doptimize=ReleaseSafe ${{ env.DEV_FLAG }}
+          wasm3/build/wasm3 zig-out/bin/lib_test.wasm
+          wasm3/build/wasm3 zig-out/bin/cli_test.wasm
+          wasm3/build/wasm3 zig-out/bin/trace_test.wasm
+          wasm3/build/wasm3 zig-out/bin/behavior_test.wasm
+
+      - name: Build.
+        run: zig build ${{ env.BUILD_CMD }} ${{ env.ZIG_MODE_FLAG }} ${{ env.ZIG_TARGET_FLAG }} ${{ env.DEV_FLAG }}
+
+      # Remove when zig strip is fixed.
+      - name: Strip (Linux)
+        if: env.BUILD_TARGET == 'x86_64-linux-gnu' && env.BUILD_MODE == 'release' && env.BUILD_CMD == 'cli'
+        run: |
+          strip zig-out/bin/doe
+
+      # # Don't strip aarch64 since it was already code signed.
+      # # TODO: Look for way to make zig strip before doing the codesign.
+      # - name: Strip (macOS)
+      #   if: env.BUILD_TARGET == 'x86_64-macos-none' && env.BUILD_MODE == 'release'
+      #   run: |
+      #     strip zig-out/${{ env.BUILD_TARGET }}/main/main
+
+      # # Currently just ad hoc signing.
+      # # aarch64 build is automatically signed by zig.
+      # - name: Codesign (macOS)
+      #   if: env.BUILD_TARGET == 'x86_64-macos-none' && env.BUILD_MODE == 'release'
+      #   run: |
+      #     codesign --force --deep -s - zig-out/${{ env.BUILD_TARGET }}/main/main
+
+      # - name: Copy binary.
+      #   run: cp
+      #     zig-out/${{ env.BUILD_TARGET }}/main/main${{ env.BIN_EXT }}
+      #     zig-out/${{ env.BUILD_TARGET }}/main/cosmic${{ env.BIN_EXT }}
+
+      - name: Zip. (linux/macos)
+        if: (env.BUILD_HOST == 'ubuntu-22.04' || env.BUILD_HOST == 'macos-12' || env.BUILD_HOST == 'macos-14') && env.BUILD_TARGET != 'wasm32-wasi' && env.BUILD_CMD == 'cli'
+        run: |
+           tar -C zig-out/bin -czvf ${{ env.BIN_ZIP }} doe
+
+      - name: Zip. (windows)
+        if: env.BUILD_TARGET == 'x86_64-windows-gnu' && env.BUILD_CMD == 'cli'
+        shell: bash
+        run: |
+          cd zig-out/bin && 7z a ../../${{env.BIN_ZIP}} doe.exe
+
+      - name: Move. (windows lib)
+        if: env.BUILD_TARGET == 'x86_64-windows-gnu' && env.BUILD_CMD == 'lib'
+        run: |
+          mv zig-out/lib/cyber.lib libdoe-windows-gnu-x64.lib
+
+      - name: Move. (windows lib)
+        if: env.BUILD_TARGET == 'x86_64-windows-msvc' && env.BUILD_CMD == 'lib'
+        run: |
+          mv zig-out/lib/cyber.lib libdoe-windows-msvc-x64.lib
+
+      - name: Move. (linux lib)
+        if: env.BUILD_TARGET == 'x86_64-linux-gnu' && env.BUILD_CMD == 'lib'
+        run: |
+          mv zig-out/lib/libcyber.a libdoe-linux-x64.a
+
+      - name: Move. (macos lib)
+        if: env.BUILD_TARGET == 'x86_64-macos-none' && env.BUILD_CMD == 'lib'
+        run: |
+          mv zig-out/lib/libcyber.a libdoe-macos-x64.a
+
+      - name: Move. (macos lib)
+        if: env.BUILD_TARGET == 'aarch64-macos-none' && env.BUILD_CMD == 'lib'
+        run: |
+          mv zig-out/lib/libcyber.a libdoe-macos-arm64.a
+
+      - name: Move. (wasm)
+        if: env.BUILD_TARGET == 'wasm32-freestanding'
+        run: |
+          mv zig-out/bin/doe-web.wasm ${{ env.BIN_ZIP }}
+
+      - name: Move. (wasi)
+        if: env.BUILD_TARGET == 'wasm32-wasi'
+        run: |
+          mv zig-out/bin/doe.wasm ${{ env.BIN_ZIP }}
+
+      - name: Save artifact.
+        if: env.BUILD_CMD == 'cli' || env.BUILD_CMD == 'web-lib'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ env.BUILD_HOST }}-${{ env.BUILD_TARGET }}-${{ env.BUILD_MODE }}-${{ env.BUILD_CMD }}
+          path: |
+            ${{ env.BIN_ZIP }}
+
+      - name: Save artifact.
+        if: env.BUILD_CMD == 'lib'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ env.BUILD_HOST }}-${{ env.BUILD_TARGET }}-${{ env.BUILD_MODE }}-${{ env.BUILD_CMD }}
+          path: |
+            libdoe-windows-gnu-x64.lib
+            libdoe-windows-msvc-x64.lib
+            libdoe-linux-x64.a
+            libdoe-macos-x64.a
+            libdoe-macos-arm64.a
+            doe-web.wasm
+
+    outputs:
+      short_version: ${{ env.SHORT_VERSION }}
+    #  version: ${{ env.BUILD_VERSION }}
+
+  docs:
+    runs-on: ubuntu-22.04
+    env:
+      ZIG_VERSION: 0.15.2
+    steps:
+      - name: Clone repo.
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+
+      - name: Install zig.
+        run: |
+          wget -c https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-x86_64-linux-${{ env.ZIG_VERSION }}.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin
+
+      - name: Build md4c.
+        run: |
+          git clone --depth=1 https://github.com/mity/md4c.git
+          cd md4c
+          mkdir build
+          cd build
+          cmake ..
+          make
+
+      - name: Setup script.
+        uses: actions/github-script@v5
+        with:
+          script: |
+            async function execCmd(name, args) {
+              const opts = {};
+              let out = '';
+              let err = '';
+              opts.listeners = {
+                stdout: (data) => {
+                  out += data.toString();
+                },
+                stderr: (data) => {
+                  process.stderr.write(data.toString());
+                }
+              };
+              // opt.cwd = './lib';
+              await exec.exec(name, args, opts);
+              return out;
+            }
+            const version = await execCmd('zig', ['build', 'version']);
+            const parts = version.split('.')
+            const last_version = parts[0] + '.' + (parseInt(parts[1])-1)
+            core.exportVariable('SHORT_VERSION', version);
+            await execCmd('git', ['fetch', '--all', '--tags']);
+            const build = await execCmd('git', ['rev-list', '--count', `${last_version}..${context.sha}`])
+            core.exportVariable('BUILD', build.trim());
+            core.exportVariable('COMMIT', context.sha.substring(0, 7));
+
+      - name: Cache.
+        uses: actions/cache@v4
+        with:
+          path: |-
+            ~/.cache/zig
+            zig-cache
+          key:
+            build-1
+          restore-keys:
+            build-1
+
+      - name: Build Doe.
+        run: zig build cli
+
+      - name: Generate docs. (Release)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          LD_LIBRARY_PATH=`pwd`/md4c/build/src zig-out/bin/doe docs/gen-docs.do -version v${{ env.SHORT_VERSION }}
+          mv docs/docs.md docs.md
+          mv docs/docs.html docs.html
+          mv docs/api.html api.html
+
+      - name: Generate docs. (Dev)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          LD_LIBRARY_PATH=`pwd`/md4c/build/src zig-out/bin/doe docs/gen-docs.do -version "${{ format('v{0}-DEV {1}-{2}', env.SHORT_VERSION, env.BUILD, env.COMMIT) }}"
+          mv docs/docs.md docs.md
+          mv docs/docs.html docs.html
+          mv docs/api.html api.html
+
+      - name: Save artifact.
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-docs
+          path: |
+            docs.html
+            docs.md
+            api.html
+
+  release:
+    needs: [build, docs]
+    name: Release
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bin-*
+          merge-multiple: true
+
+      # Manual dispatch.
+      - name: Github Latest Release.
+        uses: marvinpinto/action-automatic-releases@latest
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: latest
+          prerelease: false
+          title: v${{ needs.build.outputs.short_version }}-DEV
+          files: |
+            doe-linux-x64.tar.gz
+            doe-selinux-x64.tar.gz
+            doe-macos-x64.tar.gz
+            doe-macos-arm64.tar.gz
+            doe-windows-x64.zip
+            libdoe-windows-gnu-x64.lib
+            libdoe-windows-msvc-x64.lib
+            libdoe-linux-x64.a
+            libdoe-macos-x64.a
+            libdoe-macos-arm64.a
+            doe-web.wasm
+            doe-wasi.wasm
+            docs.html
+            docs.md
+            api.html
+
+      # Auto dispatch.
+      - name: Github Release.
+        uses: softprops/action-gh-release@v1
+        # Releases for tags only.
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            doe-linux-x64.tar.gz
+            doe-selinux-x64.tar.gz
+            doe-macos-x64.tar.gz
+            doe-macos-arm64.tar.gz
+            doe-windows-x64.zip
+            libdoe-windows-gnu-x64.lib
+            libdoe-windows-msvc-x64.lib
+            libdoe-linux-x64.a
+            libdoe-macos-x64.a
+            libdoe-macos-arm64.a
+            doe-web.wasm
+            doe-wasi.wasm
+            docs.html
+            docs.md
+            api.html

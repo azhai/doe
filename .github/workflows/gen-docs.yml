@@ -1,0 +1,92 @@
+name: Gen Docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'docs/**'
+      - 'src/builtins/**'
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    env:
+      ZIG_VERSION: 0.15.2
+    steps:
+      - name: Clone repo.
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+
+      - name: Install zig.
+        run: |
+          wget -c https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-x86_64-linux-${{ env.ZIG_VERSION }}.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin
+
+      - name: Build md4c.
+        run: |
+          git clone --depth=1 https://github.com/mity/md4c.git
+          cd md4c
+          mkdir build
+          cd build
+          cmake ..
+          make
+
+      - name: Setup script.
+        uses: actions/github-script@v5
+        with:
+          script: |
+            async function execCmd(name, args) {
+              const opts = {};
+              let out = '';
+              let err = '';
+              opts.listeners = {
+                stdout: (data) => {
+                  out += data.toString();
+                },
+                stderr: (data) => {
+                  process.stderr.write(data.toString());
+                }
+              };
+              // opt.cwd = './lib';
+              await exec.exec(name, args, opts);
+              return out;
+            }
+            const version = await execCmd('zig', ['build', 'version']);
+            const parts = version.split('.')
+            const last_version = parts[0] + '.' + (parseInt(parts[1])-1)
+            core.exportVariable('SHORT_VERSION', version);
+            await execCmd('git', ['fetch', '--all', '--tags']);
+            const build = await execCmd('git', ['rev-list', '--count', `${last_version}..${context.sha}`])
+            core.exportVariable('BUILD', build.trim());
+            core.exportVariable('COMMIT', context.sha.substring(0, 7));
+
+      - name: Cache.
+        uses: actions/cache@v4
+        with:
+          path: |-
+            ~/.cache/zig
+            zig-cache
+          key:
+            build-1
+          restore-keys:
+            build-1
+
+      - name: Build Doe.
+        run: zig build cli
+
+      - name: Generate docs.
+        run: |
+          LD_LIBRARY_PATH=`pwd`/md4c/build/src zig-out/bin/doe docs/gen-docs.do -version="${{ format('v{0}-dev {1}-{2}', env.SHORT_VERSION, env.BUILD, env.COMMIT) }}"
+          mkdir -p docs/public
+          mv docs/docs.html docs/public/docs.html
+          mv docs/api.html docs/public/api.html
+          ln -sf docs.html docs/public/index.html
+
+      - name: Deploy.
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/master'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/public

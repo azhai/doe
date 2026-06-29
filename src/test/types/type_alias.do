@@ -1,0 +1,22 @@
+use t 'test'
+
+type Vec2:
+    x float
+    y float
+
+type Vec = Vec2
+
+v := Vec{x=1, y=2}
+t.eq(v.x, 1.0)
+t.eq(v.y, 2.0)
+
+fn foo(v Vec2):
+    pass
+
+fn foo2(v Vec):
+    pass
+
+foo(v)
+foo2(v)
+
+--cytest: pass

@@ -1,0 +1,185 @@
+name: PR Build
+
+on: 
+  workflow_dispatch:
+    inputs:
+      deps_rev_override:
+        description: 'Deps Revision Override'
+        type: string
+        default: ''
+        required: false
+  pull_request:
+    paths:
+      - '**'
+      - '!.github/**'
+      - '!**.md'
+concurrency:
+  group: pr-${{ github.ref }}
+  cancel-in-progress: true
+jobs:  
+  build:
+    name: PR Build host=${{ matrix.config.host }} cmd=${{ matrix.config.cmd }} target=${{ matrix.config.target }} mode=${{ matrix.config.mode }}
+    runs-on: ${{ matrix.config.host }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - host: ubuntu-22.04
+            target: x86_64-linux-gnu
+            mode: release
+            cmd: cli
+          - host: ubuntu-22.04
+            target: x86_64-selinux-gnu
+            mode: release
+            cmd: cli
+          - host: macos-12
+            target: x86_64-macos-none
+            mode: release
+            cmd: cli
+          - host: macos-14
+            target: aarch64-macos-none
+            mode: release
+            cmd: cli
+          - host: windows-2022
+            target: x86_64-windows-gnu
+            mode: release
+            cmd: cli
+          - host: ubuntu-22.04
+            target: wasm32-freestanding
+            mode: release
+            cmd: web-lib
+          - host: ubuntu-22.04
+            target: wasm32-wasi
+            mode: release
+            cmd: cli
+          - host: windows-2022
+            target: x86_64-windows-gnu
+            mode: release
+            cmd: lib
+          - host: windows-2022
+            target: x86_64-windows-msvc
+            mode: release
+            cmd: lib
+          - host: ubuntu-22.04
+            target: x86_64-linux-gnu
+            mode: release
+            cmd: lib
+          - host: macos-12
+            target: x86_64-macos-none
+            mode: release
+            cmd: lib
+          - host: macos-14
+            target: aarch64-macos-none
+            mode: release
+            cmd: lib
+    env:
+      ZIG_TARGET_FLAG: >-
+        ${{ fromJson('{
+          "x86_64-windows-gnu": "-Dtarget=x86_64-windows-gnu -Dcpu=baseline",
+          "x86_64-windows-msvc": "-Dtarget=x86_64-windows-msvc -Dcpu=baseline",
+          "x86_64-linux-gnu": "-Dtarget=x86_64-linux-gnu -Dcpu=baseline",
+          "x86_64-selinux-gnu": "-Dtarget=x86_64-linux-gnu -Dcpu=baseline -Dselinux",
+          "x86_64-macos-none": "-Dtarget=x86_64-macos-none -Dcpu=baseline",
+          "aarch64-macos-none": "-Dtarget=aarch64-macos-none -Dcpu=baseline",
+          "wasm32-freestanding": "-Dtarget=wasm32-freestanding",
+          "wasm32-wasi": "-Dtarget=wasm32-wasi",
+        }')[matrix.config.target] }}
+      BUILD_HOST: ${{ matrix.config.host }}
+      BUILD_TARGET: ${{ matrix.config.target }}
+      BUILD_CMD: ${{ matrix.config.cmd }}
+      BUILD_MODE: ${{ matrix.config.mode }}
+      BIN_EXT: ${{ contains(matrix.config.target, 'windows') && '.exe' || '' }}
+      ZIG_MODE_FLAG: ${{ (matrix.config.mode == 'release' && '-Doptimize=ReleaseSafe') || '' }}
+      ZIG_VERSION: 0.15.2
+    steps:
+      - name: Install Linux deps.
+        if: env.BUILD_HOST == 'ubuntu-22.04' && env.BUILD_TARGET == 'x86_64-linux-gnu'
+        run: |
+          sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu `lsb_release -sc` main universe restricted multiverse"
+          sudo apt-get update -y -qq
+          sudo apt-get install xz-utils
+
+      - name: Clone repo.
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          #submodules: recursive
+
+      - name: Install zig.
+        if: env.BUILD_HOST == 'ubuntu-22.04'
+        run: |
+          wget -c https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-x86_64-linux-${{ env.ZIG_VERSION }}.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin
+
+      - name: Install wasm3.
+        if: env.BUILD_HOST == 'ubuntu-22.04' && (env.BUILD_TARGET == 'wasm32-freestanding' || env.BUILD_TARGET == 'wasm32-wasi')
+        run: |
+          git clone --depth=1 https://github.com/wasm3/wasm3.git
+          cd wasm3
+          mkdir build
+          cd build
+          cmake ..
+          make
+
+      - name: Install zig.
+        if: env.BUILD_HOST == 'macos-12'
+        run: |
+          wget -c https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-x86_64-macos-${{ env.ZIG_VERSION }}.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin
+          xcode-select --print-path
+
+      - name: Install zig.
+        if: env.BUILD_HOST == 'macos-14'
+        run: |
+          wget -c https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-aarch64-macos-${{ env.ZIG_VERSION }}.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin
+          xcode-select --print-path
+
+      - name: Install zig.
+        if: env.BUILD_HOST == 'windows-2022'
+        run: |
+          Invoke-WebRequest -Uri 'https://ziglang.org/download/${{ env.ZIG_VERSION }}/zig-x86_64-windows-${{ env.ZIG_VERSION }}.zip' -OutFile 'C:\zig.zip'
+          cd C:\
+          7z x zig.zip
+          Add-Content $env:GITHUB_PATH 'C:\zig-x86_64-windows-${{ env.ZIG_VERSION }}\'
+
+      - name: Cache.
+        uses: actions/cache@v4
+        with:
+          path: |-
+            ~/.cache/zig
+            zig-cache
+            ~/AppData/Local/zig
+          key:
+            pr-build-${{ env.BUILD_TARGET }}-${{ env.BUILD_MODE }}-1
+          restore-keys:
+            pr-build-${{ env.BUILD_TARGET }}-${{ env.BUILD_MODE }}-1
+
+      - name: Run tests. (debug)
+        if: env.BUILD_TARGET != 'wasm32-wasi' && (env.BUILD_CMD == 'cli' || (env.BUILD_CMD == 'lib' && env.BUILD_TARGET != 'x86_64-windows-msvc'))
+        run: |
+          zig build test ${{ env.ZIG_TARGET_FLAG }} 
+
+      - name: Run tests. (debug, msvc)
+        if: env.BUILD_CMD == 'lib' && env.BUILD_TARGET == 'x86_64-windows-msvc'
+        run: |
+          zig build test ${{ env.ZIG_TARGET_FLAG }} -Dffi=false
+
+      - name: Run tests. (release)
+        if: env.BUILD_TARGET != 'wasm32-wasi' && (env.BUILD_CMD == 'cli' || (env.BUILD_CMD == 'lib' && env.BUILD_TARGET != 'x86_64-windows-msvc'))
+        run: |
+          zig build test ${{ env.ZIG_TARGET_FLAG }} -Doptimize=ReleaseSafe
+
+      - name: Run tests. (release, msvc)
+        if: env.BUILD_CMD == 'lib' && env.BUILD_TARGET == 'x86_64-windows-msvc'
+        run: |
+          zig build test ${{ env.ZIG_TARGET_FLAG }} -Doptimize=ReleaseSafe -Dffi=false
+
+      - name: Run tests.
+        if: env.BUILD_TARGET == 'wasm32-freestanding' || env.BUILD_TARGET == 'wasm32-wasi'
+        run: |
+          zig build build-test -Dtarget=wasm32-wasi -Doptimize=ReleaseSafe
+          wasm3/build/wasm3 zig-out/bin/lib_test.wasm
+          wasm3/build/wasm3 zig-out/bin/cli_test.wasm
+          wasm3/build/wasm3 zig-out/bin/trace_test.wasm
+          wasm3/build/wasm3 zig-out/bin/behavior_test.wasm
+
+      - name: Build.
+        run: zig build ${{ env.BUILD_CMD }} ${{ env.ZIG_MODE_FLAG }} ${{ env.ZIG_TARGET_FLAG }}

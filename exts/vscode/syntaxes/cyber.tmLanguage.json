@@ -1,0 +1,199 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Cyber",
+	"patterns": [
+		{ "include": "#comments" },
+		{ "include": "#annotations" },
+		{ "include": "#keywords" },
+		{ "include": "#types" },
+		{ "include": "#constants" },
+		{ "include": "#strings" },
+		{ "include": "#numbers" },
+		{ "include": "#identifiers" },
+		{ "include": "#operators" }
+	],
+	"repository": {
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.double-dash.cyber",
+					"begin": "--",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.comment.cyber" }
+					},
+					"end": "$",
+					"patterns": [
+						{
+							"name": "keyword.other.doc.cyber",
+							"match": "\\|"
+						}
+					]
+				},
+				{
+					"name": "comment.block.cyber",
+					"begin": "/\\*",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.comment.cyber" }
+					},
+					"end": "\\*/",
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.comment.cyber" }
+					}
+				}
+			]
+		},
+		"annotations": {
+			"patterns": [
+				{
+					"name": "meta.annotation.cyber",
+					"match": "#\\[([a-zA-Z_][a-zA-Z0-9_]*)\\]",
+					"captures": {
+						"1": { "name": "entity.name.annotation.cyber" }
+					}
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.cyber",
+					"match": "\\b(if|elif|else|for|while|break|return|continue|switch|case|else|try|catch|pass|spawn|await)\\b"
+				},
+				{
+					"name": "keyword.other.cyber",
+					"match": "\\b(use|as|var|func|fn|type|enum|object|my|coinit|coresume|coyield|struct|cstruct|cunion|const)\\b"
+				},
+				{
+					"name": "keyword.operator.logical.cyber",
+					"match": "\\b(and|or|not)\\b"
+				},
+				{
+					"name": "storage.modifier.cyber",
+					"match": "\\b(none|never)\\b"
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"name": "storage.type.primitive.cyber",
+					"match": "\\b(int|float|bool|str|byte|void|any)\\b"
+				},
+				{
+					"name": "entity.name.type.cyber",
+					"match": "\\b([A-Z][a-zA-Z0-9_]*)\\b"
+				},
+				{
+					"name": "storage.type.template.cyber",
+					"match": "%[A-Z][a-zA-Z0-9_]*"
+				}
+			]
+		},
+		"constants": {
+			"patterns": [
+				{
+					"name": "constant.language.boolean.cyber",
+					"match": "\\b(true|false)\\b"
+				},
+				{
+					"name": "constant.language.null.cyber",
+					"match": "\\b(none)\\b"
+				}
+			]
+		},
+		"strings": {
+			"patterns": [
+				{
+					"name": "string.quoted.raw.cyber",
+					"begin": "`",
+					"end": "`",
+					"patterns": [
+						{
+							"name": "constant.character.escape.cyber",
+							"match": "%\\{[^}]*\\}"
+						}
+					]
+				},
+				{
+					"name": "string.quoted.single.cyber",
+					"begin": "'",
+					"end": "'",
+					"patterns": [
+						{
+							"name": "constant.character.escape.cyber",
+							"match": "\\\\."
+						},
+						{
+							"name": "constant.character.escape.cyber",
+							"match": "%\\{[^}]*\\}"
+						}
+					]
+				},
+				{
+					"name": "string.quoted.double.cyber",
+					"begin": "\"",
+					"end": "\"",
+					"patterns": [
+						{
+							"name": "constant.character.escape.cyber",
+							"match": "\\\\."
+						},
+						{
+							"name": "constant.character.escape.cyber",
+							"match": "%\\{[^}]*\\}"
+						}
+					]
+				}
+			]
+		},
+		"numbers": {
+			"patterns": [
+				{
+					"name": "constant.numeric.hex.cyber",
+					"match": "\\b0x[0-9a-fA-F]+\\b"
+				},
+				{
+					"name": "constant.numeric.binary.cyber",
+					"match": "\\b0b[01]+\\b"
+				},
+				{
+					"name": "constant.numeric.float.cyber",
+					"match": "\\b[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?\\b"
+				},
+				{
+					"name": "constant.numeric.integer.cyber",
+					"match": "\\b[0-9]+\\b"
+				}
+			]
+		},
+		"identifiers": {
+			"patterns": [
+				{
+					"name": "support.function.builtin.cyber",
+					"match": "@[a-zA-Z_][a-zA-Z0-9_]*"
+				},
+				{
+					"name": "entity.name.function.cyber",
+					"match": "\\b([a-z_][a-zA-Z0-9_]*)\\s*(?=\\()"
+				},
+				{
+					"name": "variable.other.cyber",
+					"match": "\\b[a-z_][a-zA-Z0-9_]*\\b"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"name": "keyword.operator.assignment.cyber",
+					"match": ":=|\\+=|-=|\\*=|/=|%=|\\|=|&=|\\^=|<<=|>>="
+				},
+				{
+					"name": "keyword.operator.cyber",
+					"match": "->|==|!=|<=|>=|<|>|\\+|-|\\*|/|%|\\||&|\\^|<<|>>|\\."
+				}
+			]
+		}
+	},
+	"scopeName": "source.cyber"
+}

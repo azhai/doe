@@ -1,0 +1,61 @@
+# Build artifacts
+/.zig-cache/
+/zig-out/
+/doe.s
+/scratch
+/scratch.o
+/scratch.zig
+/macros.hpp
+
+# Examples
+/examples/foo.o
+/examples/libcyber/bind_module
+/examples/libcyber/main
+/examples/libfoo.dylib
+/examples/libfoo.so
+/examples/web-playground/doe.wasm
+
+# Documentation
+/docs/api.html
+/docs/docs.html
+/docs/docs-modules.md
+/docs-todo.md
+/site
+
+# Temporary & scratch files
+/cmd.cy
+/temp.cy
+/test.txt
+/test/assets/write.txt
+/notes.md
+/todo.md
+
+# Extensions
+/exts/vscode/doe-0.0.1.vsix
+
+# Editor & IDE
+/.arts/
+/.codeartsdoer/
+/.codebuddy/
+/.jetbrains/
+/.trae/
+/.vscode/
+/.zed/
+
+/doe.sublime-project
+/doe.sublime-workspace
+AGENTS.md
+
+# OS files
+.DS_Store
+
+# Global patterns
+*.class
+*.dylib
+*.log
+*.o
+*.out
+*.so
+
+# Archived
+/graveyard/
