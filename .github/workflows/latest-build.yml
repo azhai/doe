@@ -104,7 +104,7 @@ jobs:
       BUILD_TARGET: ${{ matrix.config.target }}
       BUILD_MODE: ${{ matrix.config.mode }}
       BUILD_CMD: ${{ matrix.config.cmd }}
-      BIN_NAME: doe
+      BIN_NAME: doer
       BIN_EXT: ${{ contains(matrix.config.target, 'windows') && '.exe' || '' }}
       ZIG_MODE_FLAG: ${{ (matrix.config.mode == 'release' && '-Doptimize=ReleaseSafe') || '' }}
       DEV_FLAG: ${{ startsWith(github.ref, 'refs/tags/') && '-Ddev=false' || '' }}
@@ -237,7 +237,7 @@ jobs:
       - name: Strip (Linux)
         if: env.BUILD_TARGET == 'x86_64-linux-gnu' && env.BUILD_MODE == 'release' && env.BUILD_CMD == 'cli'
         run: |
-          strip zig-out/bin/doe
+          strip zig-out/bin/doer zig-out/bin/doec
 
       # # Don't strip aarch64 since it was already code signed.
       # # TODO: Look for way to make zig strip before doing the codesign.
@@ -261,13 +261,13 @@ jobs:
       - name: Zip. (linux/macos)
         if: (env.BUILD_HOST == 'ubuntu-22.04' || env.BUILD_HOST == 'macos-12' || env.BUILD_HOST == 'macos-14') && env.BUILD_TARGET != 'wasm32-wasi' && env.BUILD_CMD == 'cli'
         run: |
-           tar -C zig-out/bin -czvf ${{ env.BIN_ZIP }} doe
+           tar -C zig-out/bin -czvf ${{ env.BIN_ZIP }} doer doec
 
       - name: Zip. (windows)
         if: env.BUILD_TARGET == 'x86_64-windows-gnu' && env.BUILD_CMD == 'cli'
         shell: bash
         run: |
-          cd zig-out/bin && 7z a ../../${{env.BIN_ZIP}} doe.exe
+          cd zig-out/bin && 7z a ../../${{env.BIN_ZIP}} doer.exe doec.exe
 
       - name: Move. (windows lib)
         if: env.BUILD_TARGET == 'x86_64-windows-gnu' && env.BUILD_CMD == 'lib'
@@ -399,7 +399,7 @@ jobs:
       - name: Generate docs. (Release)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          LD_LIBRARY_PATH=`pwd`/md4c/build/src zig-out/bin/doe docs/gen-docs.do -version v${{ env.SHORT_VERSION }}
+          LD_LIBRARY_PATH=`pwd`/md4c/build/src zig-out/bin/doer docs/gen-docs.do -version v${{ env.SHORT_VERSION }}
           mv docs/docs.md docs.md
           mv docs/docs.html docs.html
           mv docs/api.html api.html
@@ -407,7 +407,7 @@ jobs:
       - name: Generate docs. (Dev)
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         run: |
-          LD_LIBRARY_PATH=`pwd`/md4c/build/src zig-out/bin/doe docs/gen-docs.do -version "${{ format('v{0}-DEV {1}-{2}', env.SHORT_VERSION, env.BUILD, env.COMMIT) }}"
+          LD_LIBRARY_PATH=`pwd`/md4c/build/src zig-out/bin/doer docs/gen-docs.do -version "${{ format('v{0}-DEV {1}-{2}', env.SHORT_VERSION, env.BUILD, env.COMMIT) }}"
           mv docs/docs.md docs.md
           mv docs/docs.html docs.html
           mv docs/api.html api.html

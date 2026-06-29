@@ -28,7 +28,7 @@ The areas of focus for the language include:
 * Value ownership and deinitializers.
 * Metaprogramming with templates, inline evaluation, and compiler hooks.
 * Concurrency. Channels, futures, and `await` to synchronize green threads. Fibers and generators for cooperative coroutines.
-* Compilation ahead-of-time to C or interpeted from its virtual machine.
+* Interpreted from its virtual machine or compiled just-in-time.
 * Sandbox mode that restricts the language to only safe constructs.
 * Introspection. Much of the internals such as the builtin types and runtime is written in Doe and can be inspected from the source code or the [API docs](api.html).
 
@@ -36,7 +36,7 @@ These docs provide a reference manual for the language. It can be read in order 
 
 ## Hello World.
 Here is a simple example that offers a sneak peek into the language:
-```cy
+```do
 use math
 
 nouns := []str{'World', '世界', 'दुनिया', 'mundo'}
@@ -78,12 +78,12 @@ for nouns |n|:
 
 ## Statements.
 A statement ends with the new line character:
-```cy
+```do
 a := 123
 ```
 
 Any token inside delimited parentheses, brackets, or braces, can be wrapped to the next line:
-```cy
+```do
 sum := add(1, 2, 3, 4,
     100, 200, 300, 400)
 
@@ -92,7 +92,7 @@ colors := {'red', 'blue', 'green',
 ```
 
 A statement can wrap to the next line if the last token before the new line is an operator or keyword.
-```cy
+```do
 gameover := health <= 0 or
     player.collides_with(spikes)
 
@@ -103,7 +103,7 @@ if year > 2020 and year <= 2030 and
 
 ## Comments.
 A single line comment starts with two hyphens and ends at the end of the line.
-```cy
+```do
 -- This is a comment.
 
 a := 123   -- This is a comment on the same line as a statement.
@@ -113,7 +113,7 @@ a := 123   -- This is a comment on the same line as a statement.
 Some statements can start a new block with a colon.
 The first statement in a new block must be indented further.
 Indentation can be spaces or tabs but not both.
-```cy
+```do
 -- This `if` statement begins a new block.
 if true:
     a := 234
@@ -121,7 +121,7 @@ if true:
 
 Subsequent statements in the block must follow the same indentation.
 The block ends when a statement recedes from this indentation:
-```cy
+```do
 items := {10, 20, 30}
 for items |it|:
     if it == 20:
@@ -132,7 +132,7 @@ for items |it|:
 ```
 
 A block with a single statement can be written in a single line:
-```cy
+```do
 -- A single line block.
 if true: print(123)
 
@@ -142,7 +142,7 @@ if true: print(123)
 ```
 
 Since blocks require at least one statement, `pass` can be used as a placeholder statement:
-```cy
+```do
 fn foo():
     pass
 ```
@@ -152,19 +152,19 @@ Variables allow values to be stored as named locations in memory.
 
 ### Local variables.
 `:=` declares a variable with the type inferred from the initializer.
-```cy
+```do
 a := 123
 ```
 
 Variables can be assigned afterwards using the `=` operator:
-```cy
+```do
 a = 234
 ```
 
 ### `var` declaration.
 When a local variable is declared with `var`, a type specifier is required.
 The initializer must satisfy the type constraint:
-```cy
+```do
 -- Correct.
 var a float = 123.0
 
@@ -173,7 +173,7 @@ var b float = 'hello'
 ```
 
 Sometimes, the `var` declaration can be simpler and more readable than an equivalent `:=` declaration:
-```cy
+```do
 var action ?str = switch color:
     case .green => 'go'
     case .red => 'stop'
@@ -184,7 +184,7 @@ var action ?str = switch color:
 Local variables exist until the end of their scope. Each block has their own variable scope.
 
 Variables declared in the current scope will take precedence over any parent variables with the same name. This is also known as variable shadowing:
-```cy
+```do
 fn foo():
     a := 234
 
@@ -203,7 +203,7 @@ fn foo():
 Global variables live until the end of the program and can be accessed from any context (unless they have a private modifier). Globals are considered *unsafe* and are forbidden in sandbox mode.
 
 Global variables are declared with `global` and require a type specifier:
-```cy
+```do
 global a int = 123
 
 fn foo():
@@ -211,7 +211,7 @@ fn foo():
 ```
 
 The initializer of a global variable cannot reference other global variables:
-```cy
+```do
 global a int = 123
 
 global b int = a
@@ -219,7 +219,7 @@ global b int = a
 ```
 
 However, they can be reassigned afterwards to any runtime expression:
-```cy
+```do
 global b int = 0
 
 b = a
@@ -227,13 +227,13 @@ b = a
 
 Global variable initializers have a natural order based on when it was encountered by the compiler.
 The following would invoke `load_a` before `load_b`:
-```cy
+```do
 global a int = load_a()
 global b int = load_b()
 ```
 
 Circular references are not possible because a global initializer cannot reference another global variable:
-```cy
+```do
 global a = b
 --> error: Initializer can not reference a global variable.
 
@@ -242,12 +242,12 @@ global b = a
 
 ## Constants.
 Constants are declared with a const evaluated expression:
-```cy
+```do
 const pi float = 3.14159265358979323846264338327950288419716939937510
 ```
 
 The type specifier is optional and can be inferred from the expression:
-```cy
+```do
 const empty = ''
 
 const lib = switch meta.system():
@@ -315,7 +315,7 @@ All infix operators have left-to-right associativity and all prefix operators ha
 ### Arithmetic operators.
 The following arithmetic operators are supported for [numeric data types](#numbers).
 Some types such as `math.Vec` and `math.Mat` also overload these operators.
-```cy
+```do
 1 + 2     --> 3   (Addition)
 100 - 10  --> 90  (Subtraction)
 3 * 4     --> 12  (Multiplication)
@@ -333,7 +333,7 @@ Primitive values compare with their underlying bytes.
 The comparison recurses for composite types.
 For the `str` type, the underlying bytes are compared for equality.
 For references types, the comparison checks that the two references point to the same value.
-```cy
+```do
 1 == 1          --> true
 1 == 2          --> false
 1 == true       --> false
@@ -348,13 +348,13 @@ la == {1, 2, 3} --> false
 ```
 
 The not equals operator returns true if the two values are not equal.
-```cy
+```do
 1 != 1          --> false
 1 != 2          --> true
 ```
 
 Number types have additional comparison operators.
-```cy
+```do
 a > b           --> `true` if a is greater than b
 a >= b          --> `true` if a is greater than or equal to b
 a < b           --> `true` if a is less than b
@@ -366,7 +366,7 @@ a <= b          --> `true` if a is less than or equal to b
 The logical operators [`and`](#and-expression), [`or`](#or-expression), and `not` are supported.
 
 The unary operators `not` and `!` perform negation on the boolean value:
-```cy
+```do
 not false     --> true
 not true      --> false
 !false        --> true
@@ -376,7 +376,7 @@ not true      --> false
 ### Bitwise operators.
 
 The following bitwise operators are supported for `Int` and `Raw` number values.
-```cy
+```do
 -- and: any underlying bits that are set in both integers are set in the new integer.
 a && b
 
@@ -450,7 +450,7 @@ This chapter is an overview of commonly used builtin types.
 
 ## Booleans.
 A `bool` type can be `true` or `false`.
-```cy
+```do
 a := true
 if true:
     print('a is true')
@@ -469,19 +469,19 @@ Raw integer types do not encode a sign bit. They include: `r8` (`byte`, `r16`, `
 While integer types are typically used for counting, raw integer types are intended to represent masks and raw memory.
 
 Without a target type, a numeric literal will default to the `int` type:
-```cy
+```do
 a := 123
 ```
 
 Other integer notations include:
-```cy
+```do
 a := 0xFF     -- Hexidecimal.
 a = 0o17      -- Octal.
 a = 0b1010    -- Binary.
 ```
 
 String literals evaluate as their UTF-8 codepoint if the target integer type is big enough:
-```cy
+```do
 -- Success.
 var a int = '🐶'
 
@@ -493,7 +493,7 @@ var b byte = 'a'
 ```
 
 Strings and other values can be converted to a `int` using the type as a function:
-```cy
+```do
 a := '123'
 b := int(a) 
 ```
@@ -508,18 +508,18 @@ Floating point types include: `f32`, `f64`
 A `float` can represent integers between -(2<sup>53</sup>-1) and (2<sup>53</sup>-1). However, integers outside this range are not guaranteed to have a unique representation.
 
 Decimal and scientific notations always produce a `float` value:
-```cy
+```do
 a := 2.34567
 b := 123.0e4
 ```
 
 An integer literal can evaluate to a target float type:
-```cy
+```do
 var a float = 123
 ```
 
 Strings and other values can be converted to a `float` using the type as a function:
-```cy
+```do
 a := '12.3'
 b := float(a) 
 ```
@@ -539,19 +539,19 @@ Some string operations are SIMD accelerated.
 A raw string doesn't allow any escape sequences or string interpolation.
 
 Backticks are used to delimit a single line literal:
-```cy
+```do
 fruit := `apple`
 s := `abc🦊xyz🐶`
 ```
 
 Since raw strings interprets the sequence of characters as is, the backtick character can not be escaped:
-```cy
+```do
 -- ParseError.
 s := `abc`xyz`
 ```
 
 Triple backticks are used to delimit a multi-line literal. It also allows single backticks:
-```cy
+```do
 s := ```abc`xyz```
 greet := ```Hello
 World```
@@ -561,7 +561,7 @@ World```
 A string literal allows escape sequences and string interpolation.
 
 Single or double quotes are used to delimit a single line literal:
-```cy
+```do
 fruit := 'apple'
 fruit = 'Miso\'s apple'
 fruit = "Miso's apple"
@@ -569,7 +569,7 @@ sentence := '%{fruit} is tasty.'
 ```
 
 Triple single or double quotes are used to delimit a multi-line literal:
-```cy
+```do
 title := 'last'
 doc := '''A single quote ' doesn't need to be escaped.'''
 s := """line a
@@ -595,13 +595,13 @@ The following escape sequences are supported in string literals:
 | `\x??` | -- | Hexidecimal number |
 
 Example:
-```cy
+```do
 print('\xF0\x9F\x90\xB6')    --> 🐶
 ```
 
 ### String indexing.
 The index operator returns the `byte` from a given index:
-```cy
+```do
 a := 'abcxyz'
 print(a[1])         --> 0x62
 print(a[1] == 'b')  --> true
@@ -611,25 +611,25 @@ Since indexing operates at the byte level, it should not be relied upon for iter
 However, if the string is known to only contain ASCII runes (each rune occupies one byte), indexing will return the expected rune.
 
 `str.rune_at` returns the rune from a given byte index:
-```cy
+```do
 a := '🐶abcxyz'
 print(a.rune_at(0)) --> 0x1f436
 ```
 
 If the index does not begin a sequence of valid UTF-8 bytes, the replacement character (0xFFFD, 65533) is returned:
-```cy
+```do
 a := '🐶abcxyz'
 print(a.rune_at(1)) --> 0xfffd
 ```
 
 `str.seek` will return the n'th rune:
-```cy
+```do
 a := '🐶abcxyz'
 print(a.seek(2))    --> 0x62 ('b')
 ```
 
 Slicing also operates on byte indexes and returns a view of the string at the given start and end (exclusive) indexes:
-```cy
+```do
 a := 'abcxyz'
 b := a[0..3]
 print(a[0..3])  --> abc
@@ -638,14 +638,14 @@ print(a[1..])   --> bcxyz
 
 ### String concatenation.
 Concatenate two strings together with the `+` operator or `str.concat`. 
-```cy
+```do
 res := 'abc' + 'xyz'
 res = res.concat('end')
 ```
 
 ### String interpolation.
 String templates wrap expressions in `%{}` which converts them to strings using the builtin `to_print_string`:
-```cy
+```do
 name := 'Rex'
 points := 123
 title := 'Scoreboard: %{name} %{points}'
@@ -654,19 +654,19 @@ String templates can not contain nested string templates.
 
 ### String formatting.
 Formatting replaces `{}` placeholders with values converted to strings:
-```cy
+```do
 print('First: {}, Last: {}'.fmt({'John', 'Doe'}))
 ```
 
 Alternatively, a custom placeholder can be specified:
-```cy
+```do
 print('if (%PH) {\n\t%PH}'.fmt('%PH', {cond, body}))
 ```
 
 *Named placeholders will be supported.*
 
 Values that can be formatted into a string typically have a `fmt` method:
-```cy
+```do
 x := 123
 print(x.fmt(.hex))  --> 7b
 ```
@@ -682,7 +682,7 @@ This has several properties:
 * Allows comments in between adjacent lines.
 * The starting whitespace for each line is made explicit.
 
-```cy
+```do
 paragraph := {
     \`raw string literal
     \hello\nworld
@@ -699,7 +699,7 @@ paragraph := {
 ## Symbols.
 Symbol literals begin with `@`, followed by an identifier.
 Each symbol has a global unique ID.
-```cy
+```do
 currency := @usd
 print(currency == @usd)   --> true
 print(int(currency))      --> <unique ID>
@@ -712,18 +712,18 @@ References are safe to use because the memory that they point to are [automatica
 Separating values and references provides more control over how data is laid out in memory. For example, some types may benefit from compacted members to leverage cache locality and reduce object indirection.
 
 The lift operator `^` lifts a value onto the heap and returns a reference to the new value:
-```cy
+```do
 i := 123
 ref := ^i
 ```
 
 The `.*` operator dereferences a `^T` and returns the value that it points to:
-```cy
+```do
 print(ref.*)      --> 123
 ```
 
 If a value was intended to be initialized on the heap, it's usually constructed with the lift operator `^`. This avoids a copy of the underlying value:
-```cy
+```do
 pos := ^Vec2{x=4, y=5}
 ```
 
@@ -733,40 +733,40 @@ An `Option` is a value type that provides **null safety** by forcing the inner v
 Option types either hold a `none` value or wraps `some` value.
 
 A type prefixed with `?` is the idiomatic way to declare an option type. The following `str` optional types are equivalent:
-```cy
+```do
 Option[str]
 ?str
 ```
 
 ### Wrap value.
 A value is automatically wrapped into the inferred optional's `some` case:
-```cy
+```do
 var a ?str = 'abc'
 print(a)    --> abc
 ```
 
 The option type's constructor can also wrap a value:
-```cy
+```do
 a := ?str('abc')
 print(a)    --> abc
 ```
 
 ### Wrap `none`.
 `none` is automatically initialized to the inferred optional's `none` case:
-```cy
+```do
 var a ?str = none
 print(a)    --> none
 ```
 
 The option type's constructor can also wrap `none`:
-```cy
+```do
 a := ?str(none)
 print(a)    --> none
 ```
 
 ### Unwrap or panic.
 The `.?` operator unwraps an optional. The current thread panics if the expression evaluates to the `none` case at runtime:
-```cy
+```do
 var opt ?int = 123
 
 -- Success.
@@ -780,33 +780,33 @@ v = opt.?
 
 ### Unwrap or default.
 The `?else` operator either returns the unwrapped value or a default value when the optional is `none`:
-```cy
+```do
 var opt ?int = none
 var v = opt ?else 123
 print(v)     --> 123
 ```
 
 An `?else` block executes a block of statements for the `none` case:
-```cy
+```do
 value := opt ?else:
     return error.Missing
 ```
 
 A value can be returned with `break`: *Planned Feature*
-```cy
+```do
 value := opt ?else:
     break 'empty'
 ```
 
 ### Optional chaining.
 Given the last member's type `T` in a chain of `?.` operators, the expression will evaluate to `?T(none)` upon the first encounter of `none` or the value of the last member as `?T`: *Planned Feature*
-```cy
+```do
 last := root?.a?.b?.c?.last
 ```
 
 ### `if` unwrap.
 The `if` statement can be amended to unwrap an optional value with the capture `|_|` clause:
-```cy
+```do
 var opt ?str = 'abc'
 if opt |value|:
     print(value)    --> abc
@@ -815,7 +815,7 @@ if opt |value|:
 ### `while` unwrap. 
 The `while` statement can be amended to unwrap an optional value using the capture `|_|` clause.
 The loop exits when `none` is encountered:
-```cy
+```do
 iter := dir.walk()
 while iter.next() |entry|:
     print(entry.name)
@@ -826,29 +826,29 @@ A vector type is a static data structure that holds contiguous elements of the s
 It's denoted as `[N]T` where `N` is the size of the vector and `T` is the element type.
 
 Vectors are constructed with the initializer expression:
-```cy
+```do
 a := [3]int{1, 2, 3}
 ```
 
 The number of elements can be inferred with the generic type `[_]T`:
-```cy
+```do
 a := [_]int{1, 2, 3}
 ```
 
 An initializer literal can infer the target vector type:
-```cy
+```do
 var a [3]int = {1, 2, 3}
 ```
 
 Vectors can be indexed:
-```cy
+```do
 a[2] = 300
 print(a[2])    --> 300
 ```
 
 ### Partial vectors.
 Sometimes a vector prefers to be incrementally initialized where the uninitialized elements are unowned. The partial vector type denoted as `[..N]T` keeps track of how many elements in the vector are initialized at runtime so that it can be properly deinitialized:
-```cy
+```do
 elems := [..4]Stateful{}
 print(elems.len())   --> 0
 
@@ -856,7 +856,7 @@ print(elems.len())   --> 0
 ```
 
 Elements must be incrementally appended to the `PartialVector`. Indexing an element that hasn't been initialized results in a thread panic:
-```cy
+```do
 elems << Stateful()
 elems << Stateful()
 
@@ -870,23 +870,23 @@ It's denoted as `[]T` where `T` is the element type.
 Slices grow or shrink when inserting or removing elements.
 
 Slices are constructed with the initializer expression:
-```cy
+```do
 arr := []int{1, 2, 3}
 ```
 
 The intializer literal can infer the target slice type:
-```cy
+```do
 var a []int = {1, 2, 3}
 ```
 
 The first element of the slice starts at index 0.
-```cy
+```do
 print(arr[0])    --> 1
 ```
 
 ### Sub-slices.
 Slices can be sliced into smaller sub-slices. Sub-slices share the same underlying element buffer as the original slice which enables read/write access to the same elements:
-```cy
+```do
 arr := []int{1, 2, 3, 4, 5}
 print(arr[0..0])    --> {}
 print(arr[0..3])    --> {1, 2, 3}
@@ -895,7 +895,7 @@ print(arr[3..])     --> {4, 5}
 
 A sub-slice will clone the underlying buffer upon any resize operation such as `append`, `insert`, `remove`, etc.
 Once cloned, the slice will no longer point to the same elements as the original slice:
-```cy
+```do
 arr := []int{1, 2, 3}
 slice := arr[0..1]
 slice[0] = 100
@@ -908,14 +908,14 @@ print('%{arr[0]} %{slice[0]')   --> 100 101
 
 The `+..` invokes the slice operator with an end position that is an increment from the start: *Planned Feature*
 
-```cy
+```do
 arr := []int{1, 2, 3, 4, 5}
 print(arr[2+..2])   --> {3, 4}
 ```
 
 ### Slice operations.
 Here are some common slice operations:
-```cy
+```do
 arr := []int{234}
 
 -- Append a value.
@@ -946,18 +946,18 @@ A `Map` type is a dynamic data structure that stores key value pairs in a lookup
 `Map` provides default hashing functions while `HashMap` requires custom hash functions.
 
 Maps are constructed with the initializer expression:
-```cy
+```do
 map := Map[str, int]{a=123, b=234}
 ```
 
 The initializer literal can infer the target map type:
-```cy
+```do
 var map Map[str, int] = {a=123, b=234}
 ```
 
 ### Map operations.
 Here are some common map operations:
-```cy
+```do
 map := Map[int, int]{}
 
 -- Set a key value pair.
@@ -979,7 +979,7 @@ for map |entry|:
 
 ## Implicit casts.
 Closely related types are implicitly casted to fit the target type:
-```cy
+```do
 var f float = 1.23
 var i int = 123
 
@@ -1024,7 +1024,7 @@ The following implicit casts are supported:
 
 ## Type casts.
 The `as` operator casts a value to a supported target type:
-```cy
+```do
 var i int = 127
 var small i8 = 0
 
@@ -1033,7 +1033,7 @@ small = as[i8] i
 ```
 
 Some casts can fail at runtime. For example, a bigger integer can only be casted to a smaller integer if its value fits the bounds of the smaller integer:
-```cy
+```do
 var i int = 10000
 var small i8 = 0
 
@@ -1042,7 +1042,7 @@ small = as[i8] i
 ```
 
 When the target type can be inferred, it can be omitted from the `as` operator:
-```cy
+```do
 small = as i
 ```
 
@@ -1111,7 +1111,7 @@ A struct type contains typed fields.
 
 Struct types are declared with `type` followed by an optional `struct` keyword,
 The following two declarations are equivalent:
-```cy
+```do
 type Vec2 struct:
     x float
     y float
@@ -1123,18 +1123,18 @@ type Vec2:
 
 ### Initialize struct.
 Structs are constructed from an initializer expression:
-```cy
+```do
 v := Vec2{x=30, y=40}
 print(v.x)      --> 30
 ```
 
 An initializer literal can infer the target struct type:
-```cy
+```do
 var v Vec2 = {x=30, y=40}
 ```
 
 Structs by default are copyable (unless a child member is not):
-```cy
+```do
 v := Vec2{x=30, y=40}
 w := v
 v.x = 100
@@ -1144,7 +1144,7 @@ print(v.x)     --> 100
 
 ### Default field values.
 Struct initialization requires all fields to be specified, unless a default value was declared. Default field values must be **const expressions** :
-```cy
+```do
 type Vec2:
     x float = 0
     y float = 0
@@ -1158,7 +1158,7 @@ Unlike a `struct`, a `cstruct` can default to their [zero values](#zero-values).
 
 ### Field visibility.
 Fields have public visibility by default. However, when a field is declared with a `-` prefix, the field can only be accessed within the same module (although metaprogramming can get around this constraint):
-```cy
+```do
 type Info:
     a       int
     -b      int
@@ -1167,7 +1167,7 @@ type Info:
 
 ### Circular references.
 Field declarations may have circular type references if the struct can be initialized:
-```cy
+```do
 type Node:
     val  int
     next ?^Node
@@ -1177,7 +1177,7 @@ n := Node{val=123, next=none}
 In the above example, `next` has an optional `?^Node` reference type so it can be initialized to `none` when creating a new `Node` instance.
 
 The following `Node` type reports an error because it can not be initialized:
-```cy
+```do
 type Node:
     val  int
     next Node     --> CompileError. Circular reference.
@@ -1186,7 +1186,7 @@ type Node:
 ### Type embedding.
 Type embedding facilitates type composition by using the namespace of a child field's type: *Planned Feature*
 
-```cy
+```do
 type Base:
     a int
 
@@ -1207,7 +1207,7 @@ Note that embedding a type does not declare extra fields or methods in the conta
 
 If there is a member name conflict, the containing type's member has a higher precedence:
 
-```cy
+```do
 type Container:
     a int
     b use Base
@@ -1220,14 +1220,14 @@ print(c.double())
 ```
 
 Since the embedding field is named, it can be used just like any other field:
-```cy
+```do
 print(c.b.a)
 --> 123
 ```
 
 ## `@init`.
 Types can declare an `@init` function that gets invoked when calling the type as a function:
-```cy
+```do
 type Vec2:
     x float
     y float
@@ -1240,7 +1240,7 @@ v := Vec2(1, 2)
 
 ### `@init_sequence`.
 `@init_sequence` overrides the sequence literal `T{_, _, ...}` which can contain a varying number of elements:
-```cy
+```do
 type MyArray
 
 fn MyArray :: @init_sequence(init [&]int):
@@ -1253,7 +1253,7 @@ arr := MyArray{1, 2, 3}
 
 ### `@init_record`.
 `@init_record` overrides the record literal `T{_=_, _=_, ...}` which can contain a varying number of record pairs:
-```cy
+```do
 type MyMap
 
 fn MyMap :: @init_record(init [&]Pair[str, int]) -> Self:
@@ -1268,7 +1268,7 @@ map := MyMap{a=123, b=234, c=345}
 Methods are functions that are invoked with a parent value (receiver).
 
 They are declared by specifying the receiver's type before the function name and the other parameters. Inside a method body, `self` references the receiver's members as well as invoking other methods:
-```cy
+```do
 type Node:
     value int
     next  ?^Node
@@ -1285,7 +1285,7 @@ n.inc(321)    --> 445
 ```
 
 The receiver type can be passed by value, reference, borrow, or pointer:
-```cy
+```do
 -- Pass by value.
 fn (Node) inc(n int)
 
@@ -1331,7 +1331,7 @@ The following is a list of operators:
 | Slice | `@slice` |
 
 Prefix operators only have a receiver parameter while infix operators have a receiver and RHS parameter. Currently, postfix operators cannot be overloaded. Since operator characters aren't allowed as standard identifiers, they are wrapped as raw string literals:
-```cy
+```do
 type Vec2:
     x float
     y float
@@ -1351,7 +1351,7 @@ c := -a
 ```
 
 Special operators have their own name. This example overloads the `index` operator and the `set index` operator:
-```cy
+```do
 type MyCollection:
     arr []int
 
@@ -1369,7 +1369,7 @@ print(a[1])
 ### Special methods.
 
 The `@get` method allows overriding field accesses for undeclared fields:
-```cy
+```do
 type Foo
 
 fn (&Foo) @get(%name EvalStr):
@@ -1384,7 +1384,7 @@ print(f.hello)
 ```
 
 The `@set` method allows overriding field assignments for undeclared fields:
-```cy
+```do
 type Foo
 
 fn (&Foo) @set(%name EvalStr, value int):
@@ -1397,7 +1397,7 @@ f.abc = 123
 
 ## Tuples.
 Tuples are declared using parentheses to wrap member fields:
-```cy
+```do
 type Vec2 struct(x float, y float)
 
 -- Shorthand declaration.
@@ -1405,12 +1405,12 @@ type Vec(x float, y float)
 ```
 
 If the fields share the same type, they can be declared in a field group:
-```cy
+```do
 type Vec3(x, y, z float)
 ```
 
 Function and methods can still be declared inside the type's namespace:
-```cy
+```do
 type Vec2(x float, y float)
 
 fn (&Vec2) scale(s float):
@@ -1419,24 +1419,24 @@ fn (&Vec2) scale(s float):
 ```
 
 Tuples can be initialized with member values corresponding to the order they were declared:
-```cy
+```do
 v := Vec2{3, 4}
 ```
 
 The initializer literal can infer the target tuple type:
-```cy
+```do
 var v Vec2 = {3, 4}
 ```
 
 Tuples can still be initialized with explicit field names:
-```cy
+```do
 v := Vec2{x=3, y=4}
 ```
 
 ## Type namespace.
 Functions and other symbols (except types) can be declared within the type's namespace.
 `Self` is alias for the parent type:
-```cy
+```do
 type Node:
     value int
     next  ?^Node
@@ -1454,7 +1454,7 @@ print(Node.DefaultValue)   --> 100
 ## Type aliases.
 A type alias refers to a different type.
 Once declared, the alias and the target type can be used interchangeably:
-```cy
+```do
 type Vec2:
     x float
     y float
@@ -1466,7 +1466,7 @@ pos := Pos2{x=3, y=4}
 
 ## Enums.
 An enum type is an exhaustive type where all possible values are defined by case members.
-```cy
+```do
 type Fruit enum:
     case apple
     case orange
@@ -1481,7 +1481,7 @@ print(int(fruit))  --> 3
 The memory representation of an enum defaults to `int`. Each case has an increasing value starting from 0.
 
 A dot literal can infer a target enum type:
-```cy
+```do
 fruit := Fruit.kiwi
 fruit = .orange
 print(fruit == Fruit.orange)   --> true
@@ -1489,7 +1489,7 @@ print(fruit == Fruit.orange)   --> true
 
 ### Enum `switch`.
 `switch case` can match enum cases:
-```cy
+```do
 fn binary_search(arr []int, needle int, compare CompareFn) -> ?int:
     low := 0
     high := len
@@ -1504,7 +1504,7 @@ fn binary_search(arr []int, needle int, compare CompareFn) -> ?int:
 
 ## Choices.
 A choice type is an exhaustive type where only one defined case can be active. Each case member may contain a payload of an arbitrary type. An enum declaration becomes a choice declaration if one of the cases has a payload type specifier:
-```cy
+```do
 type Shape enum:
     case rectangle Rectangle
     case circle    Circle
@@ -1519,7 +1519,7 @@ type Triangle(base, height float)
 
 ### Initialize choice.
 A choice can be initialized with the case payload as an argument:
-```cy
+```do
 rect := Rectangle{width=10, height=20}
 s := Shape.rectangle(rect)
 
@@ -1530,13 +1530,13 @@ s = Shape.line(20)
 ```
 
 A choice without a payload is initialized like an enum case:
-```cy
+```do
 s = Shape.point
 ```
 
 ### Choice `switch`.
 `switch case` can match choice cases and capture the payload:
-```cy
+```do
 switch s:
     case .rectangle |r|:
         print('%{r.width} %{r.height}')
@@ -1554,20 +1554,20 @@ switch s:
 
 ### Unwrap choice.
 A choice can be unwrapped with the `.!` operator. This will either return the payload or signals a thread panic if the expected case is not active:
-```cy
+```do
 s := Shape.line(20)
 print(s.!line)     --> 20
 ```
 
 ## Traits.
 A trait is a generic type that defines a common interface for implementing types:
-```cy
+```do
 type Shape trait:
     fn area() -> float
 ```
 
 Types can be declared to implement a trait with the `with` keyword:
-```cy
+```do
 type Circle:
     with Shape
     radius float
@@ -1587,7 +1587,7 @@ A type that intends to implement a trait but does not satisfy the trait's interf
 
 ### Dynamic dispatch.
 Since traits are a generic type, they need to be wrapped in a `Dyn` container to be materialized into a dynamic dispatch value. Implementing types become assignable to a `Dyn` reference type:
-```cy
+```do
 var s ^Dyn[Shape] = ^Circle{radius=2}
 print(s.area())       --> 12.57
 
@@ -1609,7 +1609,7 @@ This can be used to specialize types based on compile-time values.
 ## Type templates.
 Type declarations can include template parameters.
 Unlike function parameters, template parameters accept types rather than values of types by default. The type provided is constrained by a **generic** type specifier. The `Any` generic type allows any type:
-```cy
+```do
 type MyContainer[T Any]:
     id    int
     value T
@@ -1619,7 +1619,7 @@ fn (&MyContainer[]) get() -> T:
 ```
 
 When the type template is expanded, a variant of the type is generated:
-```cy
+```do
 a := MyContainer[str]{id=123, value='abc'}
 print(a.get())     --> abc
 ```
@@ -1627,13 +1627,13 @@ Expanding the template with the same parameters returns the same generated type.
 
 ### `const` template parameter.
 Template parameters can accept const values other than types with the `const` modifier:
-```cy
+```do
 type MyArray[T Any, const N int]
 ```
 
 ### Template specialization.
 Wrapping [type evaluation](#type-evaluation) as a type template allows template specialization from template parameters:
-```cy
+```do
 type MyContainer[T Any] const:
     if T == int:
         return IntContainer
@@ -1677,7 +1677,7 @@ a := MyContainer[int]{1, 2, 3}
 
 ### `if` statement.
 The `if` and `else` statements branch execution depending on conditions. The `else` clause can contain a condition which is only evaluated if the previous if/else conditional evaluated to `false`:
-```cy
+```do
 a := 10
 if a == 10:
     print('a is 10')
@@ -1690,14 +1690,14 @@ else:
 ### `if` expression.
 An `if` expression evaluates to a value depending on the condition.
 Unlike the `if` statement, the `if` expression can not contain `else` conditions:
-```cy
+```do
 x := 123
 b := if (x) 1 else 0
 ```
 
 ### `and` expression.
 `and` evaluates to `true` if both operands are `true`. Otherwise, it evaluates to `false`. If the left operand is `false`, the evaluation of the right operand is skipped:
-```cy
+```do
 true and true    --> true
 true and false   --> false
 false and true   --> false
@@ -1710,7 +1710,7 @@ if a > 5 and a < 15:
 
 ### `or` expression.
 `or` evaluates to `true` if at least one of the operands is `true`. Otherwise, it evaluates to `false`. If the left operand is `true`, the evaluation of the right operand is skipped:
-```cy
+```do
 true or true     --> true
 true or false    --> true
 false or true    --> true
@@ -1725,7 +1725,7 @@ if a == 20 or a == 10:
 
 ### Infinite `while`.
 The `while` keyword starts an infinite loop which continues to run the code in the block until a `break` or `return` is reached:
-```cy
+```do
 count := 0
 while:
     if count > 100:
@@ -1735,7 +1735,7 @@ while:
 
 ### Conditional `while`.
 When the `while` clause contains a condition, the loop continues to run until the condition is evaluated to `false`:
-```cy
+```do
 running := true
 count := 0
 while running:
@@ -1746,25 +1746,25 @@ while running:
 
 ### `for` range.
 `for` loops can iterate over a range that starts at an `int` (inclusive) to a target `int` (exclusive):
-```cy
+```do
 for 0..4:
     performAction() 
 ```
 
 The loop's counter variable can be captured:
-```cy
+```do
 for 0..100 |i|:
     print(i)   --> 0, 1, 2, ... , 99
 ```
 
 When `..=` is used, the target `int` is inclusive:
-```cy
+```do
 for 0..=100 |i|:
     print(i)   --> 0, 1, 2, ... , 100
 ```
 
 To decrement the counter instead, use either `..>` or `..>=`:
-```cy
+```do
 for 100..>=0 |i|:
     print(i)   --> 100, 99, 98, ... , 0
 ```
@@ -1773,7 +1773,7 @@ for 100..>=0 |i|:
 The `for` clause can iterate over any type that implements the `Iterable` trait. An Iterable contains an `iterator()` method which returns a value that implements the `Iterator` trait. The for loop continually invokes the iterator's `next()` method until `none` is returned.
 
 A `Slice` can be iterated. The element value returned from an iterator's `next()` can be captured in the `|_|` clause:
-```cy
+```do
 arr := {1, 2, 3, 4, 5}
 
 for arr |n|:
@@ -1781,7 +1781,7 @@ for arr |n|:
 ```
 
 Iterating a `Map` yields `MapEntry` values:
-```cy
+```do
 map := {a=123, b=234}
 
 for map |entry|:
@@ -1790,7 +1790,7 @@ for map |entry|:
 ```
 
 A counting index can be captured before the **each** variable. The count starts at 0 for the first value:
-```cy
+```do
 arr := {1, 2, 3, 4, 5}
 for arr |i, val|:
     print('index %{i}, value %{val}')
@@ -1798,7 +1798,7 @@ for arr |i, val|:
 
 ### `break` statement.
 The `break` statement exits the current parent loop prematurely:
-```cy
+```do
 for 0..10 |i|:
     if i == 4:
         break
@@ -1807,7 +1807,7 @@ for 0..10 |i|:
 
 ### `continue` statement.
 The `continue` statement skips the rest of the current loop iteration and resumes execution on the next iteration:
-```cy
+```do
 for 0..10 |i|:
     if i == 4:
         -- Skips printing `4`.
@@ -1817,7 +1817,7 @@ for 0..10 |i|:
 
 ## `switch` matching.
 The `switch` statement matches on a control expression and branches to a case from a matching condition. Multiple cases can be grouped together with a comma separator:
-```cy
+```do
 val := 1000
 switch val:
     case 100:
@@ -1832,7 +1832,7 @@ A switch statement requires an `else` case unless the type is [`exhaustive`](#en
 
 ### `case` range.
 Case ranges can be declared for integer types. Unlike other range clauses, a case range's last value is inclusive:
-```cy
+```do
 val := 50 
 switch val:
     case 0..100:
@@ -1845,7 +1845,7 @@ switch val:
 
 ### `case` fallthrough.
 When a case is declared without a body, it will fallthough to the next case:
-```cy
+```do
 val := 1000
 switch val:
     case 100
@@ -1858,7 +1858,7 @@ switch val:
 
 ### `switch` expression.
 The result of a `switch` statement can be assigned to a variable. Each case must return an expression:
-```cy
+```do
 shu := switch pepper:
     case 'bell'     => 0
     case 'anaheim'  => 500
@@ -1869,7 +1869,7 @@ shu := switch pepper:
 
 ## `begin` block.
 A `begin` block executes its body statements within a new scope:
-```cy
+```do
 a := 123
 
 begin:
@@ -1917,7 +1917,7 @@ See [Error handling](#error-handling).
 
 ## Function declaration.
 Functions must be declared with a name:
-```cy
+```do
 use math
 
 fn dist(x0, y0, x1, y1 float) -> float:
@@ -1927,7 +1927,7 @@ fn dist(x0, y0, x1, y1 float) -> float:
 ```
 
 Functions can not reference outside local variables unless it's a [lambda](#lambdas):
-```cy
+```do
 a := 1
 
 fn foo():
@@ -1935,7 +1935,7 @@ fn foo():
 ```
 
 Functions can only return one value. However, the value can be destructured: *Planned Feature*
-```cy
+```do
 use math
 
 fn compute(rad float) -> [2]float:
@@ -1946,7 +1946,7 @@ fn compute(rad float) -> [2]float:
 
 ### Function overloading.
 Functions can be overloaded by their type signature:
-```cy
+```do
 fn foo() -> int:
     return 2 + 2
 
@@ -1963,7 +1963,7 @@ print(foo(20, 5))    --> 100
 
 ## Parameter groups.
 When multiple parameters share the same type they can be declared together in a sequence:
-```cy
+```do
 fn sum(a, b, c int) -> int
     return a + b + c
 ```
@@ -1973,7 +1973,7 @@ fn sum(a, b, c int) -> int
 
 ## Function values.
 Functions can be assigned to variables or passed around as values:
-```cy
+```do
 -- Assigning to a local variable.
 bar := dist
 
@@ -1992,14 +1992,14 @@ fn dist(x0, y0, x1, y1 float) -> float:
 
 ### Lambdas.
 A lambda is an anonymous function that can only be referenced as a function value:
-```cy
+```do
 add := fn(a, b int) -> int:
     return a + b
 ```
 
 ### Inferred lambdas.
 Inferred lambdas are declared with the capture `|_|` clause followed by the function body expression. The parameter and return types are inferred from the target function type:
-```cy
+```do
 -- Lambda without any parameters.
 do(|_| print('hello'))
 
@@ -2014,7 +2014,7 @@ app.on_update = |delta_ms| update_physics(delta_ms)
 ```
 
 A blockless statement can contain one lambda that has their function body continued in a new block:
-```cy
+```do
 queue_task(.high_priority, |_|):
     print('My important task.')
     do_stuff()
@@ -2022,7 +2022,7 @@ queue_task(.high_priority, |_|):
 
 ### Closures.
 Lambdas can capture local variables with reference types from an immediate parent scope. The following example shows the lambda `f` capturing `a` from the main scope:
-```cy
+```do
 a := ^1
 f := fn() -> int:
     return a.* + 2
@@ -2030,7 +2030,7 @@ print(f())     --> 3
 ```
 
 When a closure captures a local variable that is not a reference `^T`, it becomes a pinned closure. A pinned closure cannot be copied or moved: *Still experimental*
-```cy
+```do
 a := 1
 f := fn() -> int:
     return a + 2
@@ -2039,19 +2039,19 @@ print(f())     --> 3
 
 ### Function pointer types.
 A function pointer type is denoted as `fn(P1, P2, ...) -> R` where `P`s are parameter types and `R` is the return type. Currently, function pointer types can only only be declared as a type alias:
-```cy
+```do
 type AddFn = fn(int, int) -> int
 ```
 
 Function pointer types can include optional parameter names.
 If one parameter has a name, the other parameters must also have names.
 Parameter names do not alter the function signature and only serve as documentation:
-```cy
+```do
 type AddFn = fn(a int, b int) -> int
 ```
 
 Functions and lambdas (excluding closures) can be assigned to a function pointer type:
-```cy
+```do
 fn add(a, b int) -> int:
     return a + b
 
@@ -2065,7 +2065,7 @@ func = |a, b| a + b + 123
 A function union type is denoted as `Func(FN)` where `FN` is a function pointer type.
 
 It can hold closures in addition to functions and lambdas:
-```cy
+```do
 c := ^5
 fn add_c(a int, b int) -> int:
     return a + b + c.*
@@ -2078,13 +2078,13 @@ func(10, 20)       --> 35
 
 ## Function calls.
 Functions can be called with arguments wrapped in parentheses:
-```cy
+```do
 d := dist(100, 100, 200, 200)
 ```
 
 Named arguments are required for named parameters:
 > _Planned Feature_
-```cy
+```do
 d := dist(x0=10, x1=20, y0=30, y1=40)
 ```
 
@@ -2096,13 +2096,13 @@ d := dist(x0=10, x1=20, y0=30, y1=40)
 
 ## Function templates.
 Function declarations become function templates if they have template parameters:
-```cy
+```do
 fn add[T Any](a T, b T) -> T:
     return a + b
 ```
 
 The function template can then be expanded to a function:
-```cy
+```do
 add_int := add[int]
 print(add_int(1, 2))    --> 3
 print(add[float](1, 2)) --> 3.0
@@ -2110,14 +2110,14 @@ print(add[float](1, 2)) --> 3.0
 
 ### Generic functions.
 When function's signature contains embedded template parameters `%`, it becomes a generic function:
-```cy
+```do
 fn add(%T type, a T, b T) -> T:
     return a + b
 ```
 
 Generic functions automatically expand to a function when invoked.
 The template parameter(s) are used to generate the appropriate function:
-```cy
+```do
 print(add(int, 1, 2))   --> 3
 print(add(float, 1, 2)) --> 3.0
 ```
@@ -2126,7 +2126,7 @@ Note that invoking the function again with the same template parameter(s) uses t
 
 ### Infer parameter.
 When a template parameter is declared in a type specifier, it's inferred from the call  argument's type:
-```cy
+```do
 fn add(a %T, b T) -> T:
     return a + b
 
@@ -2135,7 +2135,7 @@ print(add(1.0, 2.0))    --> 3.0
 ```
 
 Nested template parameters can also be inferred:
-```cy
+```do
 fn set(m Map[%K, %V], key K, val V):
     m[key] = val
 ```
@@ -2199,7 +2199,7 @@ A value created on the stack can only have one owner; the variable it was assign
 When the last owner goes out of scope (no longer reachable), its value is deinitialized.
 
 At the end of a block, a child variable can no longer be accessed so its value is deinitialized:
-```cy
+```do
 a := 123
 
 -- Deinit `a`.
@@ -2207,7 +2207,7 @@ a := 123
 In this case, it's effectively a no-op because `a` is a primitive `int` type.
 
 If the value was a `str` (an immutable type backed by a reference counted buffer), the deinitialize logic would release a reference count (-1) on the underlying buffer:
-```cy
+```do
 a := 'hello'
 
 -- Deinit `a`.
@@ -2217,7 +2217,7 @@ a := 'hello'
 Since the string buffer's reference count reaches 0, it's the last owner that points to the buffer so the buffer value is deinitialized (freed from heap memory).
 
 The following initializes a value that holds a system resource:
-```cy
+```do
 a := os.open_file('foo.txt')!
 
 -- Deinit `a`.
@@ -2227,7 +2227,7 @@ a := os.open_file('foo.txt')!
 In this case, `a` deinitializes by closing the file handle that it owns.
 
 Owners can also go out of scope when they have been reassigned:
-```cy
+```do
 a := 123
 
 -- Deinit `a`.
@@ -2245,7 +2245,7 @@ A value always knows **how** to deinitialize itself as described by its type, an
 ### Copy semantics.
 Commonly used data types are copyable such as primitives, `str`, `Slice`, and others.
 A copyable type is implicitly copied. This can result in a shallow or deep copy depending on how the type is defined:
-```cy
+```do
 a := 123
 
 b := a
@@ -2253,7 +2253,7 @@ b := a
 ```
 
 Composite types are also copyable if all its members are copyable:
-```cy
+```do
 ?int       -- Copyable option.
 
 type Foo:  -- Copyable struct.
@@ -2262,7 +2262,7 @@ type Foo:  -- Copyable struct.
 ```
 
 A custom type can also be copyable if it declares a `@copy` method:
-```cy
+```do
 type MyArray:
     ptr Ptr[byte]
     len int
@@ -2275,7 +2275,7 @@ fn (&MyArray) @copy() -> Self:
 ```
 
 A type that implements the `NoCopy` trait prevents implicit copying:
-```cy
+```do
 type Foo:
     with NoCopy
 
@@ -2291,13 +2291,13 @@ Some types such as `Array` disallows copying but can still be [cloned](#cloning)
 
 ### Cloning.
 Some value types cannot be implicitly copied but can be explicitly cloned: *Planned feature*
-```cy
+```do
 a := Array[int]{1, 2, 3}
 b := clone(a)
 ```
 
 Any implicitly `Copyable` type is also implicitly `Cloneable`. By default, `clone` will invoke the type's copy constructor:
-```cy
+```do
 a := 123
 
 b := clone(a)
@@ -2305,7 +2305,7 @@ b := clone(a)
 ```
 
 The default `clone` behavior can be overridden by declaring a `@clone` method on the type:
-```cy
+```do
 type Foo:
     a int
 
@@ -2315,7 +2315,7 @@ fn (&Foo) @clone() -> Self:
 
 ### Moving.
 Values can be moved, thereby transfering ownership from one variable to another:
-```cy
+```do
 a := 123
 b := move a
 
@@ -2324,7 +2324,7 @@ print(a)
 ```
 
 Some types such as `Array` can not be passed around by default without moving (or cloning) the value:
-```cy
+```do
 a := Array[int]{1, 2, 3}
 
 print(compute_sum(move a))
@@ -2332,7 +2332,7 @@ print(compute_sum(move a))
 In this case, the `Array` value is moved into the `compute_sum` function, so the `Array` is deinitialized by the callee function and not the callsite.
 
 Values can be partially moved if a subset of its members were moved:
-```cy
+```do
 type Foo:
     a int
     b str
@@ -2351,7 +2351,7 @@ Borrows grant **mutability** or read/write access to a value.
 
 A borrow type is denoted as `&T` where `T` is the type that the borrow points to.
 The `&` operator is used to obtain a borrow to a value:
-```cy
+```do
 a := 123
 ref := &a
 ref.* = 234
@@ -2368,7 +2368,7 @@ fn inc(a &int):
 ```
 
 A borrow can not outlive the value it's referencing:
-```cy
+```do
 a := 123
 ref := &a
 if true:
@@ -2378,7 +2378,7 @@ if true:
 ```
 
 Some dynamic data structure types allow borrowing a reference to an inner element:
-```cy
+```do
 a := Array[int]{1, 2, 3}
 elem := &a[2]
 elem.* = 300
@@ -2398,7 +2398,7 @@ The `&&` prefix operator is used to obtain an exclusive borrow to a value.
 An exclusive borrow type is denoted as `&&T` where `T` is the type that the reference points to.
 
 `Array` is a type that requires an exclusive borrow for operations that can resize or reallocate its dynamic buffer:
-```cy
+```do
 a := Array[int]{1, 2, 3}
 invalidate(&&a)
 
@@ -2412,7 +2412,7 @@ Note that invoking the append `<<` and `clear` methods automatically obtain an e
 Resize operations such as `<<` and `clear` require an exclusive borrow because they can potentially reallocate a dynamic buffer, thereby invalidating other borrows.
 If another borrow is alive before invoking these methods, the compiler would attempt to prematurely end the lifetime of the other borrows in order to satisfy the exclusivity constraint.
 If this is not possible, then obtaining an exclusive borrow would result in a compile error:
-```cy
+```do
 a := Array[int]{1, 2, 3}
 elem := &a[2]
 a << 4
@@ -2427,7 +2427,7 @@ fn append_to(elem &int, arr &&Array[int]):
 
 ### `self` borrow.
 Methods can be declared to accept borrows or exclusive borrows from the `self` receiver:
-```cy
+```do
 type Foo:
     a int
 
@@ -2436,7 +2436,7 @@ fn (&Foo) mutate():
 ```
 
 Invoking methods automatically attempts to obtain the correct borrow type as specified by the method:
-```cy
+```do
 f := Foo{a=1}
 f.mutate()
 -- Obtain borrow to `f`.
@@ -2444,14 +2444,14 @@ f.mutate()
 
 ### `scope` parameter.
 Functions can only return borrows if the scope is bound to a borrow parameter. This is possible with the `scope` modifier:
-```cy
+```do
 fn (scope &FooArray) @index_addr(idx int) -> scope &Foo:
     return &self.inner[idx]
 ```
 The `scope` binding informs the callsite that the returned borrow belongs to the same scope as a borrowed argument. This ensures the returned borrow's lifetime does not exceed the lifetime of the borrowed argument.
 
 Any type that contains a borrow member becomes a borrow container and requires the `scope` binding:
-```cy
+```do
 type FooIterator:
     rec &FooArray
     idx int
@@ -2465,7 +2465,7 @@ fn (scope &FooArray) iterator() -> scope FooIterator:
 
 ### `sink` parameter.
 The `sink` modifier accepts and consumes a value argument: *This is not much different from a `move` operation, so this feature may be removed.*
-```cy
+```do
 fn (sink Array[]) as_buffer() -> Buffer[T]:
     buf := self.buf
     length := self.length
@@ -2485,7 +2485,7 @@ Under normal conditions, the procedure follows these steps:
 2. Performs the deinitialize procedure for any child values (defined as type members).
 
 Custom deinitializers can be declared with a `@deinit` method:
-```cy
+```do
 type File:
     fd int
 
@@ -2523,7 +2523,7 @@ In safe mode, cycle detection is dispatched at the end of a thread.
 The thread will panic if a cycle is detected which subsequently begins the runtime's [fatal deinitialization procedure](#deinitializers).
 
 When enabled, the cycle detector can also be invoked manually `@check_cycles`: *TBD*
-```cy
+```do
 fn foo():
     -- Create a reference cycle.
     a := ^Foo{child=none}
@@ -2577,12 +2577,12 @@ An `error` is copyable value that should be handled at the call site or bubbled 
 
 ### `error` literal.
 An error value can be constructed from an `error` literal:
-```cy
+```do
 err := error.Oops
 ```
 
 `error` values can be compared using the `==` operator:
-```cy
+```do
 if err == error.Oops:
     handle_oops()
 ```
@@ -2592,7 +2592,7 @@ A payload value can be attached when creating an error value. *TBD*
 
 ### `error` set type.
 An error set type is an exhaustive type of possible error values: *TBD*
-```cy
+```do
 type MyError error:
     case Boom
     case BadArgument
@@ -2608,14 +2608,14 @@ A result type is a choice type that holds either an `error` or a payload.
 It is denoted as `!T` where `T` is the payload type.
 
 It can be constructed by inferring an error or a payload value:
-```cy
+```do
 var res !str = error.Failed
 
 res = 'abcxyz'
 ```
 
 In practice, results are typically constructed when returning from a function:
-```cy
+```do
 fn compute(input int) -> !int:
     if input == 42:
         return error.WhyPick42
@@ -2624,7 +2624,7 @@ fn compute(input int) -> !int:
 ```
 
 A function that can fail but has no payload would return `!void`:
-```cy
+```do
 fn validate(name str) -> !void:
     if name.len() > 64:
         return error.NameTooLong
@@ -2632,13 +2632,13 @@ fn validate(name str) -> !void:
 
 ### Unwrap or rethrow.
 The `!` postfix operator unwraps a result's payload or rethrows the error:
-```cy
+```do
 data := os.read_file('data.txt')!
 ```
 In the main block, the rethrow case would result in a thread panic.
 
 If the unwrap expression is inside a function, the rethrow case would bubble up the error to the caller. This suggests that the function must have a `Result` return type:
-```cy
+```do
 fn content_length(path str) -> !int:
     data := os.read_file(path)!
     return data.len()
@@ -2646,24 +2646,24 @@ fn content_length(path str) -> !int:
 
 ### Unwrap or default.
 The `!else` expression either unwraps a result's payload or defaults to a value:
-```cy
+```do
 res := do_something() !else 0
 ```
 
 The default case can be implemented in a block:
-```cy
+```do
 res := do_something() !else:
     panic('Failed.')
 ```
 
 The error value can be captured:
-```cy
+```do
 res := do_something() !else |err|:
     panic('Failed with %{err}')
 ```
 
 The `try` block catches thrown errors and resumes execution in a followup `catch` block:
-```cy
+```do
 try:
     funcThatCanFail()
 catch err:
@@ -2675,7 +2675,7 @@ catch err:
 
 ### Unwrap block.
 Sometimes it can be useful to catch all errors thrown in a block: *TBD*
-```cy
+```do
 try:
     res := do_something()!
     do_even_more_things(res)!
@@ -2687,7 +2687,7 @@ else |err|:
 
 ## Panics.
 The builtin `panic` is a fail-fast mechanism to quickly exit the current thread with an error message:
-```cy
+```do
 panic('oops')
 ```
 Panics can not be caught. Once `panic` is invoked, the current thread stops execution and begins to unwind its call stack. Afterwards, the thread can not be used and transitions to a panic state.
@@ -2699,7 +2699,7 @@ A panic reports the [stack trace](#stack-trace) automatically to the console.
 
 ## Stack traces.
 The builtin `stack_trace()` and `stack_trace_info()` are used to obtain the stack trace info at any point in the program:
-```cy
+```do
 fn some_nested_func():
     -- Prints the stack trace summary.
     print(stack_trace())
@@ -2744,7 +2744,7 @@ Threads are isolated from one another and can communicate by message passing or 
 
 ### Spawn threads.
 The builtin `spawn` creates and starts a new thread with a function as the entry point:
-```cy
+```do
 task := spawn(fib, {40})
 
 fn fib(n int) -> int:
@@ -2754,7 +2754,7 @@ fn fib(n int) -> int:
 ```
 
 Similarly, a thread can be spawned with a lambda as the entry point: *TBD*
-```cy
+```do
 task := spawn(|_| -> int, {}):
     -- Do computation.
 ```
@@ -2787,7 +2787,7 @@ Types that don't implement `Sendable` include:
 ### Fibers.
 A fiber is a cooperative execution context that belongs to a parent thread.
 It has its own stack but shares the thread's heap: *TODO*
-```cy
+```do
 f := Fiber(|_|):
     print('in a fiber')
 
@@ -2797,7 +2797,7 @@ f.resume()
 When a fiber panics, all other fibers in the same thread are terminated.
 
 Fibers are cooperative using a resume and yield mechanism:
-```cy
+```do
 fn two_steps():
     print('first')
     Fiber.yield()
@@ -2812,7 +2812,7 @@ f.resume()
 ```
 
 When a fiber is destructed, it will panic if it's still in progress:
-```cy
+```do
 fn forever():
     while:
         Fiber.yield()
@@ -2846,7 +2846,7 @@ Futures can represent asynchronous work that is run in parallel or on a single t
 I/O bound work can be delegated to the operating system and CPU bound work can be run across multiple threads. A `Future` is not concerned with how the work is accomplished.
 
 If an API function is meant to do work asynchronously, it would return a `Future`:
-```cy
+```do
 use aio
 
 work := aio.delay(1000)
@@ -2855,7 +2855,7 @@ print(work)
 ```
 
 Futures can hold a result value when they are completed:
-```cy
+```do
 use aio
 
 work := aio.read_file_defer('foo.txt')
@@ -2864,7 +2864,7 @@ print(work)
 ```
 
 Futures can be created with a completed value:
-```cy
+```do
 work := Future.complete(100)
 print(f)
 --> Future[int]
@@ -2879,7 +2879,7 @@ print(f.get().?)
 `await` suspends the current thread so that the scheduler can resume other threads that are in a ready state.
 
 When `await` resumes, the expression evaluates to the completed value of the `Future`:
-```cy
+```do
 use aio
 
 work := aio.read_file_defer('foo.txt')
@@ -2891,7 +2891,7 @@ print(work.await())
 
 ### Future chains.
 `Future.then_spawn` spawns another thread that is when the future completes, thereby creating an asynchronous chain. The runtime prefers to reuse the same worker that completed the future when possible: *TBD*
-```cy
+```do
 use aio
 
 res := aio.read_file_defer('foo.txt').then_spawn(|contents|):
@@ -2903,7 +2903,7 @@ print(res)
 ```
 
 Like `spawn`, the continuation can return a value:
-```cy
+```do
 res := aio.read_file_defer('foo.txt').then_spawn(|contents| -> int):
     return contents.len()
 
@@ -2916,7 +2916,7 @@ print(res.await())
 
 ### Resolving futures. 
 A `Future` can be produced and completed by a `FutureResolver`: *TBD*
-```cy
+```do
 r := FutureResolver(int)
 f := r.future()
 
@@ -2953,7 +2953,7 @@ print(gen)
 `yield` pauses the current generator and returns a value back to the call site of `Generator.next`.
 
 A generator begins and resumes execution with `next` which returns the next yielded value as an optional:
-```cy
+```do
 while gen.next() |res|:
     print(res)
     --> 123
@@ -2961,7 +2961,7 @@ while gen.next() |res|:
 ```
 
 The current state of a generator can be obtained with `Generator.status`:
-```cy
+```do
 gen := iterate()
 print(gen.status())
 --> GeneratorStatus.paused
@@ -3015,7 +3015,7 @@ Compile-time execution is run during the compilation of the user's program.
 Inline evaluation is a form of compile-time execution where the code is evaluated as each node in the AST is visited. This can not emulate the entire language but many basic operations can be evaluated and eligible types can be materialized into IR for code generation.
 
 A `const` declaration evaluates its initializer at compile-time which also evaluates the recursive calls to the `fib` function:
-```cy
+```do
 fn fib(n int) -> int:
     if n < 2:
         return n
@@ -3025,14 +3025,14 @@ const fib30 = fib(30)
 ```
 
 An expression needs to be wrapped with `#{}` to perform inline evaluation if it's not already in a compile-time context:
-```cy
+```do
 -- Assign pre-computed value to a local.
 res := #{fib(30)}
 ```
 
 ### Inline type creation.
 Types can be created from inline evaluation. Currently, only structs can be created with `meta.new_struct`:
-```cy
+```do
 type MyType[T Any] const: 
     struct_t := type.info(T).!struct
     fields := [struct_t.fields.length]meta.StructField({name='', type=void, offset=0, state_offset=0})
@@ -3049,7 +3049,7 @@ type MyType[T Any] const:
 
 ### `#if` inline.
 The `#if` statement performs inline evaluation on the condition expression and inserts it's child statements if the condition evaluates to `true`:
-```cy
+```do
 #if meta.system() == .windows:
     print('Running on Windows.')
 #else:
@@ -3058,7 +3058,7 @@ The `#if` statement performs inline evaluation on the condition expression and i
 
 ### `#for` inline.
 The `#for` statement iterates at compile-time and inserts it's child statements on every iteration. The following prints the name of every field in the type `Foo`:
-```cy
+```do
 #struct_t := type.info(Foo).!struct
 #for 0..struct_t.fields.length |i|:
     #field := struct_t.fields[i]
@@ -3067,7 +3067,7 @@ The `#for` statement iterates at compile-time and inserts it's child statements 
 
 ### `#switch` inline.
 The `#switch` statement evaluates at compile-time and inserts the child statements of the matching case block:
-```cy
+```do
 #switch type.info(T):
     #case .struct |struct_t|:
         print('a struct')
@@ -3079,7 +3079,7 @@ The `#switch` statement evaluates at compile-time and inserts the child statemen
 
 ### `switch #for` inline.
 A regular `switch` statement with a `#for` block can automatically expand all `case` statements:
-```cy
+```do
 switch value:
     #for meta.enum_values(MyEnum) |Tag|:
         case Tag:
@@ -3088,7 +3088,7 @@ switch value:
 
 ### Compile-time variables.
 Compile-time variables are assigned with a leading `#`:
-```cy
+```do
 #info := type.info(Foo)
 ```
 
@@ -3099,7 +3099,7 @@ Compile-time variables are assigned with a leading `#`:
 The `cy` module provides an API to [libdoe](#libdoe).
 
 `cy.eval` evaluates source code in an isolated VM:
-```cy
+```do
 use cy
 
 res := cy.eval('''
@@ -3115,13 +3115,13 @@ The `meta` module contains metaprogramming utilities. See the [`meta` docs](api.
 
 ## Reflection.
 `type.info` returns compile-time type info. See [`TypeInfo` docs](api.html#meta):
-```cy
+```do
 #info := type.info(Foo).!struct
 #meta.log(info.fields.length)
 ```
 
 Runtime type info is currently limited to a name and ID:
-```cy
+```do
 rt_type := MetaType(Foo)
 print(rt_type.id())
 --> 123
@@ -3143,13 +3143,13 @@ See [Custom types / Type templates](#type-templates) and [Functions / Function t
 Generic types are type constraints for parametric polymorphism. They aren't concrete types themselves but rather a placeholder that constrains an input type. They are used in template parameters and generic function parameters.
 
 The `Any` type is a generic type that has no constraints, allowing any `type`:
-```cy
+```do
 type MyContainer[T Any]:
     inner T
 ```
 
 Traits are considered generic types and constrain types to those that implement its interface:
-```cy
+```do
 type Shape trait:
     fn area() -> float
 
@@ -3159,13 +3159,13 @@ fn less(a Shape, b Shape):
 When a function parameter contains a generic type, the function becomes generic. The function is then specialized by the call site arguments.
 
 Type templates are considered generic types: *TBD*
-```cy
+```do
 fn size(c MyContainer) -> int:
     return type.size(type.of(c))
 ```
 
 Composing a generic type creates another generic type: *TBD*
-```cy
+```do
 fn size(c ?MyContainer) -> int:
     return type.size(type.of(c))
 ```
@@ -3178,7 +3178,7 @@ A `type` represents a compiler type symbol and only exists at compile-time.
 
 ### `fnsym` type.
 An `fnsym` represents a compiler function symbol that can be expanded to a runtime function pointer or a function call. They can be used as parameterized values:
-```cy
+```do
 type IntMap[K Any, const HASH fnsym(K)->int]
     ptr [*]int
     len int
@@ -3231,7 +3231,7 @@ Modules have their own namespace of static symbols. By default, importing anothe
 ## Main module.
 The main module can contain top-level imperative statements if no main function is declared.
 An imported module containing top-level statements returns an error:
-```cy
+```do
 -- main.cy
 print('ok')
 
@@ -3242,7 +3242,7 @@ print('not ok')
 
 ## Main function.
 The main module can contain a main function. It's the starting point for a program:
-```cy
+```do
 fn main():
     print('program start')
 ```
@@ -3252,7 +3252,7 @@ Builtin and std modules come with Doe. See the [API docs](api.html).
 
 ## Importing.
 The `use` statement can import modules. Builtin and std modules such as `math` can be imported without any configuration:
-```cy
+```do
 use math
 
 print(math.cos(0))
@@ -3260,7 +3260,7 @@ print(math.cos(0))
 When a `use` statement contains only a single identifier, it reuses the module name as the local name.
 
 To bind to a different local name, the `use` statement requires a name before the import specifier. Note that this also requires the import specifier to be a string literal:
-```cy
+```do
 use m 'math'
 
 print(m.random())
@@ -3268,7 +3268,7 @@ print(m.random())
 
 ### Import file.
 Source files can be imported from the local file system:
-```cy
+```do
 -- Importing a module from the local directory.
 use b 'bar.cy'
 
@@ -3278,7 +3278,7 @@ print(b.myVar)
 
 ### Import URL.
 Source files can be imported from the Internet:
-```cy
+```do
 -- Importing a module from a CDN.
 use rl 'https://mycdn.com/raylib'
 ```
@@ -3287,7 +3287,7 @@ When importing a URL without a file name, Doe's CLI will look for a `mod.cy` fro
 
 ### Import all.
 If the alias name is the wildcard character, all symbols from the module are imported into the using namespace: *This feature is experimental and may be removed in a future version.*
-```cy
+```do
 use * 'math'
 
 print(random())
@@ -3295,7 +3295,7 @@ print(random())
 
 ### Circular imports.
 Circular imports are allowed. In the following example, `main.cy` and `foo.cy` import each other without problems.
-```cy
+```do
 -- main.cy
 use foo 'foo.cy'
 
@@ -3318,7 +3318,7 @@ However, this doesn't imply that circular symbol dependencies are allowed. Diffe
 ### Destructure import.
 Modules can also be destructured using the following syntax:
 > _Planned Feature_
-```cy
+```do
 use { cos, pi } 'math'
 
 print(cos(pi))
@@ -3326,7 +3326,7 @@ print(cos(pi))
 
 ## Exporting.
 All symbols are exported by default without any additional modifiers:
-```cy
+```do
 fn foo():          
     pass
 
@@ -3337,7 +3337,7 @@ type Foo:
 ```
 
 Any symbol alias declared from `use` is not exported:
-```cy
+```do
 -- Not visible from other modules.
 use math
 ```
@@ -3345,7 +3345,7 @@ use math
 ## Symbol visibility.
 Symbols can have private visibility when declared with a `-` prefix.
 This only allows the source module to access the symbol:
-```cy
+```do
 -type Foo:
     a int
     b int
@@ -3356,7 +3356,7 @@ This only allows the source module to access the symbol:
 
 ## Symbol alias.
 `use` can create an alias to another symbol:
-```cy
+```do
 use eng 'lib/engine.cy'
 
 use Vec2 -> eng.Vector2
@@ -3425,18 +3425,18 @@ This table maps Doe to C primitive types:
 ## Pointers.
 A `Ptr[T]` type is an unmanaged reference type to the address of a `T` value.
 `none` evaluates to NULL or 0:
-```cy
+```do
 var ptr Ptr[int] = none
 ```
 
 An address can be casted to a pointer type:
-```cy
+```do
 var ptr Ptr[int] = as 0xDEADBEEF
 ```
 
 ### Address of.
 The `*` operator returns the address to a value as a pointer `Ptr[T]`:
-```cy
+```do
 value := 123
 ptr := *value
 ptr.* = 1000
@@ -3446,7 +3446,7 @@ print(value.x)
 ```
 
 The right side of a `*` has higher precedence so it can refer to an inner member:
-```cy
+```do
 type Vec2 cstruct:
     x float
     y float
@@ -3457,7 +3457,7 @@ ptr := *v.x
 
 ### Dereferencing pointers.
 Pointers are dereferenced with the `.*` operator:
-```cy
+```do
 a := 123
 ptr := *a
 print(ptr.*)
@@ -3469,7 +3469,7 @@ print(a)
 ```
 
 Accessing a member automatically dereferences the parent pointer:
-```cy
+```do
 type Vec2 cstruct:
     x float
     y float
@@ -3481,7 +3481,7 @@ print(ptr.x)   --> 30
 
 ### Pointer indexing.
 The index operator can access the nth element:
-```cy
+```do
 arr := alloc(int, 10).ptr
 arr[5] = 123
 print(arr[5])
@@ -3490,13 +3490,13 @@ print(arr[5])
 Negative indexing will locate the element before the pointer's address.
 
 Slicing returns a new span `PtrSpan[T]` over the given range:
-```cy
+```do
 span := arr[0..5]
 ```
 
 ### Pointer arithmetic.
 Addition advances the address of `Ptr[T]` by the size of `T`:
-```cy
+```do
 arr := alloc(int, 10).ptr
 arr += 1
 (arr + 3).* = 234
@@ -3504,7 +3504,7 @@ print((arr + 3).*)    --> 234
 ```
 
 Subtraction between two pointers of the same type returns the difference in units of `T`:
-```cy
+```do
 fn pc_off(base Ptr[Inst], pc Ptr[Inst]) -> int:
     return pc - base
 ```
@@ -3513,7 +3513,7 @@ fn pc_off(base Ptr[Inst], pc Ptr[Inst]) -> int:
 Pointer spans contains a pointer and a length. The type is denoted as `PtrSpan[T]` where `T` is the element type.
 
 Read and write to the nth element with the index operator: 
-```cy
+```do
 span := alloc(int, 10)
 print(span[0])
 --> 1
@@ -3524,19 +3524,19 @@ print(span[1])
 ```
 
 A `PtrSpan` has bounds checking when runtime safety is enabled:
-```cy
+```do
 print(s[100])
 --> panic: Out of bounds.
 ```
 
 A `PtrSpan` can be sliced:
-```cy
+```do
 a := span[0..2]
 ```
 
 ## C strings.
 There are utilities in the `c` module to convert between `str` and a zero terminated C string:
-```cy
+```do
 use c
 
 s := c.from_strz('c string')
@@ -3544,13 +3544,13 @@ c_str := c.to_strz(s)
 ```
 
 A `str` can also be constructed with zero appended as the last character. Since `str` is a managed type, it doesnt need an explicit free:
-```cy
+```do
 sz := str.initz('c string')
 ```
 
 ## C structs.
 A `cstruct` type mimics the memory layout of a C struct type:
-```cy
+```do
 type Data cstruct:
     x   float
     y   float
@@ -3564,7 +3564,7 @@ A `cstruct` may contain:
 
 ## C unions.
 A `cunion` type mimics the memory layout of a C union type:
-```cy
+```do
 type Data cunion:
     case i int
     case f float
@@ -3577,7 +3577,7 @@ A `cunion` may contain:
 * `enum` types.
 
 A `cunion` type is constructed with a case wrapping its payload:
-```cy
+```do
 cdata := Data.i(123)
 
 print(cdata.i)
@@ -3586,7 +3586,7 @@ print(cdata.i)
 
 ## Zero values.
 Uninitialized C struct members default to their zero values:
-```cy
+```do
 type Vec2 cstruct:
     x float
     y float
@@ -3632,20 +3632,20 @@ When building a standalone executable, the C library's source or static library 
 `extern` functions and variables are required to link with the C library. They can be autogenerated with [`cbindgen.cy`](#cbindgency) and the library's header file.
 
 Source code for the library can be declared with `c.source`:
-```cy
+```do
 use c
 
 #c.source('mylib.c')
 ```
 
 `cc` build flags can be declared with `c.flag`:
-```cy
+```do
 #if meta.system() == .macos:
     #c.flag('-Dmacos')
 ```
 
 A static library can be linked with `c.static_lib`:
-```cy
+```do
 #c.static_lib('mylib.a')
 ```
 
@@ -3656,12 +3656,12 @@ An example can be found in [ffi.cy](https://github.com/azhai/doe/blob/master/exa
 `#extern` bindings are resolved from a dynamic library upon program startup.
 
 `c.bind_lib` tells the compiler where to look for the dynamic library. The extern declarations in the same module are then resolved at runtime:
-```cy
+```do
 #c.bind_lib('mylib.dylib')
 ```
 
 A module can be configured to use static binding when building an executable or a runtime binding for faster iterations. The same `#extern` declarations are reused in both cases:
-```cy
+```do
 #if meta.is_vm_target():
     #c.bind_lib('mylib.dylib')
 ```
@@ -3673,13 +3673,13 @@ If the path argument to `open_lib` is just a filename, the search steps for the 
 
 ### `extern` functions.
 An `extern` function is configured with a C call convention and registered for static or runtime binding:
-```cy
+```do
 #[extern]
 fn SDL_CreateWindow(title Ptr[c_char], w c_int, h c_int, flags WindowFlags) -> Ptr[Window]
 ```
 
 An extern symbol name can be declared if it differs from the API name:
-```cy
+```do
 #[extern='SDL_CreateWindow']
 fn CreateWindow(title Ptr[c_char], w c_int, h c_int, flags WindowFlags) -> Ptr[Window]
 ```
@@ -3691,13 +3691,13 @@ SDL_Window* SDL_CreateWindow(const char *title, int w, int h, SDL_WindowFlags fl
 
 ### `extern` globals.
 An `extern` global is registered for static or runtime binding: *TBD*
-```cy
+```do
 #[extern] global count Ptr[int]
 ```
 Note that an `extern` global requires a pointer type.
 
 ## cbindgen.cy
-[cbindgen.cy](https://github.com/azhai/doe/blob/master/src/tools/cbindgen.cy) is a script that automatically generates bindings given a C header file. Some example bindings that were generated include: [Raylib](https://github.com/fubark/ray-cyber), [SDL3](https://github.com/azhai/doe/blob/master/src/x/sdl), [Vulkan](https://github.com/azhai/doe/blob/master/src/x/vk), and [LLVM](https://github.com/azhai/doe/blob/master/src/tools/llvm.cy).
+[cbindgen.cy](https://github.com/azhai/doe/blob/master/src/tools/cbindgen.cy) is a script that automatically generates bindings given a C header file. Some example bindings that were generated include: [Raylib](https://github.com/fubark/ray-cyber), [SDL3](https://github.com/azhai/doe/blob/master/src/x/sdl), and [Vulkan](https://github.com/azhai/doe/blob/master/src/x/vk).
 
 # libdoe.
 
@@ -3887,7 +3887,7 @@ A type binding describes how to load a `#[bind]` type:
 
 Types in Doe have the same memory layout as a C type (assuming the member types are mapped correctly):
 
-```cy
+```do
 -- Doe
 type MyNode:
     data float
@@ -3911,26 +3911,33 @@ typedef struct MyNode {
 [^top](#table-of-contents)
 
 ## Run program.
-When given the main source file, `doe` will compile and run a program in a VM: 
+When given the main source file, `doer` will compile and run a program in a VM: 
 ```bash
-cyber main.cy
-cyber path/to/main.cy
+doer main.do
+doer path/to/main.do
 ```
 
 ## Help.
 To see more options and commands, print the help screen:
 ```bash
-cyber help
+doer help
 
 # These are aliases to the help command.
-cyber -h
-cyber --help
+doer -h
+doer --help
+```
+
+`doec` also supports the help command:
+```bash
+doec help
+doec -h
+doec --help
 ```
 
 ## REPL.
-The default behavior of `doe` is to start a REPL:
+The default behavior of `doer` is to start a REPL:
 ```bash
-cyber
+doer
 > a := 123
 > a * 2
 `int` 246
@@ -3968,10 +3975,12 @@ Top level declarations such as imports, types, and functions can be referenced i
 ```
 
 ## JIT compiler.
-Doe's just-in-time compiler is incomplete and unstable. To run your script with JIT enabled:
+Doe's just-in-time compiler is incomplete and unstable. To compile and run your script with JIT, use the `doec` command:
 ```bash
-doe -jit &lt;script&gt;
+doec &lt;script&gt;
 ```
+
+`doec` is a standalone JIT compiler executable. Unlike `doer`, it does not support REPL mode.
 
 The goal of the JIT compiler is to be fast at compilation while still being significantly faster than the interpreter. The codegen involves stitching together pregenerated machine code that targets the same runtime stack slots used by the VM. This technique is also known as `copy-and-patch`.
 

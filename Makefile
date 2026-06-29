@@ -130,6 +130,10 @@ examples: build $(EXAMPLES)
 
 # Each example depends on the built CLI; the recipe runs the script.
 $(EXAMPLES_DIR)/%.do: build
+	@echo ""
+	@echo "================================================================================"
+	@echo "Running: $@"
+	@echo "================================================================================"
 	$(DOER) $@
 
 # Fiber example is fully commented out; just confirm it parses.

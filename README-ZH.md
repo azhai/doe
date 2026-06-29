@@ -1,8 +1,10 @@
-[![Latest Build](https://github.com/azhai/doe/actions/workflows/latest-build.yml/badge.svg)](https://github.com/azhai/doe/actions/workflows/latest-build.yml) [![Discord Server](https://img.shields.io/discord/828041790711136274.svg?color=7289da&label=Discord&logo=discord&style=flat-square)](https://discord.gg/YF82GYvBxQ)
+[![Latest Build](https://github.com/azhai/doe/actions/workflows/latest-build.yml/badge.svg)](https://github.com/azhai/doe/actions/workflows/latest-build.yml) 
 
 [English](README.md)
 
-Doe 是一个有趣且实用的语言。你可以将它嵌入到桌面应用、游戏或引擎中，也可以在 Web 端使用。Doe 还提供了 CLI 工具，方便在电脑上进行脚本编程。
+![Doe Logo](./docs/doe-logo.svg)
+
+Doe 是一个有趣且实用的语言，基于 [Zig](https://ziglang.org/) 和 [Cyber](https://github.com/fubark/cyber)。你可以将它嵌入到桌面应用、游戏或引擎中，也可以在 Web 端使用。Doe 还提供了 CLI 工具，方便在电脑上进行脚本编程。
 
 - [文档](https://azhai.github.io/doe)
 - [下载](https://github.com/azhai/doe/releases)
@@ -27,3 +29,7 @@ curl -fsSL https://raw.githubusercontent.com/azhai/doe/master/install.sh | bash
 curl -fsSL https://raw.githubusercontent.com/azhai/doe/master/install.sh | bash -s latest
 ```
 - 从[下载页面](https://github.com/azhai/doe/releases)安装。
+
+### 使用
+- `doer` — VM 运行器，支持 REPL 和脚本执行
+- `doec` — JIT 编译器，即时编译为 WebAssembly 模块或桌面平台的可执行文件

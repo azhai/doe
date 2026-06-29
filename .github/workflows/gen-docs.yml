@@ -78,7 +78,7 @@ jobs:
 
       - name: Generate docs.
         run: |
-          LD_LIBRARY_PATH=`pwd`/md4c/build/src zig-out/bin/doe docs/gen-docs.do -version="${{ format('v{0}-dev {1}-{2}', env.SHORT_VERSION, env.BUILD, env.COMMIT) }}"
+          LD_LIBRARY_PATH=`pwd`/md4c/build/src zig-out/bin/doer docs/gen-docs.do -version="${{ format('v{0}-dev {1}-{2}', env.SHORT_VERSION, env.BUILD, env.COMMIT) }}"
           mkdir -p docs/public
           mv docs/docs.html docs/public/docs.html
           mv docs/api.html docs/public/api.html

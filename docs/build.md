@@ -28,7 +28,7 @@ wasm3 zig-out/bin/trace_test.wasm
 ```
 
 ## Build the CLI.
-Doe is optimized for the ReleaseSafe build.
+Doe is optimized for the ReleaseSafe build. The CLI includes two executables: `doer` (VM runner with REPL support) and `doec` (JIT compiler).
 ```sh
 # For your native target.
 zig build cli -Doptimize=ReleaseSafe
@@ -40,7 +40,7 @@ zig build cli -Doptimize=ReleaseSafe -Dtarget=aarch64-macos-none
 zig build cli
 ```
 
-If all goes well, the Doe CLI executable will be located in `./zig-out/bin/doe`.
+If all goes well, the Doe CLI executables will be located in `./zig-out/bin/doer` and `./zig-out/bin/doec`.
 
 ## Build as a Library. (libdoe)
 When using Doe as a API library, you'll need to build a library instead.

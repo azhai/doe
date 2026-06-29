@@ -1,8 +1,10 @@
-[![Latest Build](https://github.com/azhai/doe/actions/workflows/latest-build.yml/badge.svg)](https://github.com/azhai/doe/actions/workflows/latest-build.yml) [![Discord Server](https://img.shields.io/discord/828041790711136274.svg?color=7289da&label=Discord&logo=discord&style=flat-square)](https://discord.gg/YF82GYvBxQ)
+[![Latest Build](https://github.com/azhai/doe/actions/workflows/latest-build.yml/badge.svg)](https://github.com/azhai/doe/actions/workflows/latest-build.yml) 
 
 [中文版](README-ZH.md)
 
-Doe is a funny and useful language. You can embed it into your applications, games, or engines on desktop or web. Doe also comes with a CLI so you can do scripting on your computer.
+![Doe Logo](./docs/doe-logo.svg)
+
+Doe is a funny and useful language, based on [Zig](https://ziglang.org/) and [Cyber](https://github.com/fubark/cyber). You can embed it into your applications, games, or engines on desktop or web. Doe also comes with a CLI so you can do scripting on your computer.
 
 - [Documentation](https://azhai.github.io/doe)
 - [Downloads](https://github.com/azhai/doe/releases)
@@ -27,3 +29,7 @@ curl -fsSL https://raw.githubusercontent.com/azhai/doe/master/install.sh | bash
 curl -fsSL https://raw.githubusercontent.com/azhai/doe/master/install.sh | bash -s latest
 ```
 - Install from [Downloads](https://github.com/azhai/doe/releases).
+
+### Usage
+- `doer` — VM runner, supports REPL and script execution
+- `doec` — JIT compiler, compiles scripts to a WebAssembly module or a native binary file on desktop platforms

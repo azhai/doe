@@ -2,6 +2,8 @@
 /.zig-cache/
 /zig-out/
 /doe.s
+/doer
+/doec
 /scratch
 /scratch.o
 /scratch.zig
@@ -23,8 +25,8 @@
 /site
 
 # Temporary & scratch files
-/cmd.cy
-/temp.cy
+/cmd.do
+/temp.do
 /test.txt
 /test/assets/write.txt
 /notes.md

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 630 210" role="img" aria-label="Doe Programming Language">
+
+  <!-- Transparent background -->
+  <!-- Scaled 150% from original 420×140 -->
+
+  <!-- ====== ABSTRACT PRISM MARK — glacier crystal with Monet light dispersion ====== -->
+  <g transform="translate(78, 105) scale(1.5)">
+
+    <!-- Main crystal body — three isometric faces -->
+    <!-- Top face -->
+    <polygon points="0,-32 30,-14 0,4 -30,-14" fill="#4DD0E1"/>
+    <!-- Left face (shadow) -->
+    <polygon points="-30,-14 0,4 0,48 -30,30" fill="#00838F"/>
+    <!-- Right face (light) -->
+    <polygon points="30,-14 0,4 0,48 30,30" fill="#80DEEA"/>
+
+    <!-- Internal facet lines -->
+    <g stroke="#004D40" stroke-width="0.6" opacity="0.3">
+      <line x1="0" y1="-32" x2="0" y2="4"/>
+      <line x1="-30" y1="-14" x2="0" y2="4"/>
+      <line x1="30" y1="-14" x2="0" y2="4"/>
+      <line x1="0" y1="4" x2="0" y2="48"/>
+      <line x1="-15" y1="-5" x2="15" y2="37"/>
+      <line x1="15" y1="-5" x2="-15" y2="37"/>
+    </g>
+
+    <!-- Crystal outline -->
+    <polygon points="0,-32 30,-14 30,30 0,48 -30,30 -30,-14"
+             fill="none" stroke="#004D40" stroke-width="1.5"/>
+
+    <!-- Monet light dispersion — scattered casually, varied sizes & positions -->
+    <circle cx="-36" cy="-24" r="6" fill="#B39DDB" opacity="0.8"/>
+    <circle cx="-26" cy="-8" r="1.8" fill="#CE93D8" opacity="0.65"/>
+    <circle cx="-42" cy="6" r="4" fill="#E1BEE7" opacity="0.55"/>
+    <circle cx="-22" cy="22" r="2.5" fill="#F8BBD0" opacity="0.7"/>
+    <circle cx="-38" cy="34" r="1.2" fill="#B39DDB" opacity="0.6"/>
+    <circle cx="-14" cy="42" r="3.5" fill="#CE93D8" opacity="0.5"/>
+
+    <circle cx="34" cy="-28" r="2" fill="#CE93D8" opacity="0.75"/>
+    <circle cx="40" cy="-10" r="5" fill="#B39DDB" opacity="0.65"/>
+    <circle cx="26" cy="14" r="1.5" fill="#F8BBD0" opacity="0.6"/>
+    <circle cx="38" cy="26" r="4.5" fill="#E1BEE7" opacity="0.7"/>
+    <circle cx="16" cy="40" r="2" fill="#B39DDB" opacity="0.55"/>
+    <circle cx="30" cy="42" r="1" fill="#CE93D8" opacity="0.5"/>
+
+    <circle cx="-4" cy="-44" r="3" fill="#CE93D8" opacity="0.55"/>
+    <circle cx="14" cy="-40" r="5.5" fill="#E1BEE7" opacity="0.5"/>
+    <circle cx="-18" cy="-36" r="1.2" fill="#F8BBD0" opacity="0.6"/>
+    <circle cx="22" cy="-32" r="2.8" fill="#B39DDB" opacity="0.45"/>
+
+    <!-- Surface sparkles -->
+    <circle cx="10" cy="-12" r="0.8" fill="#ffffff" opacity="0.4"/>
+    <circle cx="-14" cy="8" r="1.4" fill="#ffffff" opacity="0.3"/>
+    <circle cx="6" cy="24" r="0.6" fill="#ffffff" opacity="0.35"/>
+  </g>
+
+  <!-- ====== WORDMARK ====== -->
+  <text x="162" y="93"
+        font-family="ui-monospace, 'JetBrains Mono', 'Fira Code', SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="69" font-weight="700" letter-spacing="-1.5"
+        fill="#00838F">Doe</text>
+
+  <text x="165" y="126"
+        font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="19.5" font-weight="500" letter-spacing="4.5"
+        fill="#4DD0E1">PROGRAMMING LANGUAGE</text>
+
+</svg>

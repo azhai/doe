@@ -44,5 +44,5 @@ fi
 sudo sh -c "mkdir -p ${DOE_PATH}; \
     echo 'Downloading ${DOE_BUNDLE}.'; \
     curl -fsSL $DOE_BUNDLE | tar -xz -C $DOE_PATH; \
-    chmod a+x ${DOE_PATH}/doe; \
-    echo 'Installed to ${DOE_PATH}/doe.'"
+    chmod a+x ${DOE_PATH}/doer ${DOE_PATH}/doec; \
+    echo 'Installed to ${DOE_PATH}/doer and ${DOE_PATH}/doec.'"
